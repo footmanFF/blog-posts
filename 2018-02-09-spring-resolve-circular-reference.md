@@ -17,9 +17,9 @@ spring 初始化 bean 的时候，是先构造一个空的对象，然后再根�
 ```java
 // AbstractAutowireCapableBeanFactory.doCreateBean
 addSingletonFactory(beanName, new ObjectFactory<Object>() {
-	public Object getObject() throws BeansException {
-		return getEarlyBeanReference(beanName, mbd, bean);
-	}
+    public Object getObject() throws BeansException {
+        return getEarlyBeanReference(beanName, mbd, bean);
+    }
 });
 ```
 
@@ -32,22 +32,22 @@ getBean 获取缓存的逻辑：
 ```java
 // DefaultSingletonBeanRegistry
 protected Object getSingleton(String beanName, boolean allowEarlyReference) {
-	Object singletonObject = this.singletonObjects.get(beanName);
-	if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
-		synchronized (this.singletonObjects) {
-			singletonObject = this.earlySingletonObjects.get(beanName);
-			if (singletonObject == null && allowEarlyReference) {
-				ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
-				if (singletonFactory != null) {
+    Object singletonObject = this.singletonObjects.get(beanName);
+    if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+        synchronized (this.singletonObjects) {
+            singletonObject = this.earlySingletonObjects.get(beanName);
+            if (singletonObject == null && allowEarlyReference) {
+                ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+                if (singletonFactory != null) {
                     // 关键的在这里
-					singletonObject = singletonFactory.getObject(); 
-					this.earlySingletonObjects.put(beanName, singletonObject);
-					this.singletonFactories.remove(beanName);
-				}
-			}
-		}
-	}
-	return (singletonObject != NULL_OBJECT ? singletonObject : null);
+                    singletonObject = singletonFactory.getObject(); 
+                    this.earlySingletonObjects.put(beanName, singletonObject);
+                    this.singletonFactories.remove(beanName);
+                }
+            }
+        }
+    }
+    return (singletonObject != NULL_OBJECT ? singletonObject : null);
 }
 ```
 
@@ -68,9 +68,9 @@ spring 是通过将当前正在初始化，但是没有初始化完全的 bean �
 ```java
 // DefaultSingletonBeanRegistry
 protected void beforeSingletonCreation(String beanName) {
-	if (!this.inCreationCheckExclusions.contains(beanName) && !this.singletonsCurrentlyInCreation.add(beanName)) {
-		throw new BeanCurrentlyInCreationException(beanName);
-	}
+    if (!this.inCreationCheckExclusions.contains(beanName) && !this.singletonsCurrentlyInCreation.add(beanName)) {
+        throw new BeanCurrentlyInCreationException(beanName);
+    }
 }
 ```
 

@@ -4,7 +4,7 @@ title: Spring循环引用源码分析
 date: 2018-02-09
 tags: spring
 ---
-Spring bean 有两种注入方式，构造器注入和 set 注入。后者经过测试循环引用是不会报异常的。前者不确定
+Spring bean 有两种注入方式，构造器注入和 set 注入。后者经过测试循环引用是不会报异常的，前者会报异常。
 
 ### set 的方式
 
@@ -22,6 +22,8 @@ addSingletonFactory(beanName, new ObjectFactory<Object>() {
 	}
 });
 ```
+
+<!-- more -->
 
 addSingletonFactory 其实很简单，只是将 beanName 和 ObjectFactory 对象设置进缓存（一个 ConcurrentHashMap）。这里 getEarlyBeanReference 的逻辑基本就是返回参数里的 bean。参数 bean 其实就是初始化的 B1 的对象实例。
 

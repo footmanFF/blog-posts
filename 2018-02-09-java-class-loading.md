@@ -55,7 +55,7 @@ tags: java,class loading
 
 #### 初始化
 
-估计是执行 static 块代码，赋值 static 变量（不带 final），
+估计是执行 static 块代码，赋值 static 变量（不带 final）
 
 #### 使用
 

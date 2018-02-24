@@ -270,12 +270,3 @@ Code 属性：
 ##### attributes_count
 
 ##### attributes
-
-
-
-
-
-
-
-
-

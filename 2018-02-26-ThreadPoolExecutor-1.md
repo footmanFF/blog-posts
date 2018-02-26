@@ -23,6 +23,8 @@ A small toolkit of classes that support lock-free thread-safe programming on sin
 
 Interfaces and classes providing a framework for locking and waiting for conditions that is distinct from built-in synchronization and monitors.
 
+<!-- more -->
+
 ### ThreadPoolExecutor 源码
 
 #### The main pool control state

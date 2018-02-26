@@ -9,19 +9,19 @@ tags: ThreadPoolExecutor
 
 ### 并发包描述
 
-##### java.util.concurrent
-
-Utility classes commonly useful in concurrent programming. 
-
-https://docs.oracle.com/javase/7/docs/api/
-
-##### java.util.concurrent.atomic
-
-A small toolkit of classes that support lock-free thread-safe programming on single variables.
-
-##### java.util.concurrent.locks
-
-Interfaces and classes providing a framework for locking and waiting for conditions that is distinct from built-in synchronization and monitors.
+> ##### java.util.concurrent
+>
+> Utility classes commonly useful in concurrent programming. 
+>
+> https://docs.oracle.com/javase/7/docs/api/
+>
+> ##### java.util.concurrent.atomic
+>
+> A small toolkit of classes that support lock-free thread-safe programming on single variables.
+>
+> ##### java.util.concurrent.locks
+>
+> Interfaces and classes providing a framework for locking and waiting for conditions that is distinct from built-in synchronization and monitors.
 
 <!-- more -->
 
@@ -40,6 +40,8 @@ Interfaces and classes providing a framework for locking and waiting for conditi
  */
  private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
 ```
+
+<!-- more -->
 
 ctlof 方法是执行两个参数的或运算：
 

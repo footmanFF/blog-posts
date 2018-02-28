@@ -12,6 +12,7 @@ tags: material
 
 [分布式系统理论—— 从放弃到入门](https://zhuanlan.zhihu.com/distributed)
 [FLP Impossibility的证明](http://danielw.cn/FLP-proof)
-
+[分布式系统一致性的发展历史 (一)](http://danielw.cn/history-of-distributed-systems-1)
+[分布式系统一致性的发展历史 (二)](http://danielw.cn/history-of-distributed-systems-2)
 
 

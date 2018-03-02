@@ -37,6 +37,10 @@ tags: db
 
 如上第二段描述。
 
+看这个比较透彻：
+
+> https://tech.meituan.com/innodb-lock.html
+
 <!-- more -->
 
 幻读的描述：

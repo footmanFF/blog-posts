@@ -19,3 +19,6 @@ tags: material
 [awesome-distributed-systems](https://github.com/zhenlohuang/awesome-distributed-systems)
 [MIT-6.824学习之路](http://ts25504.github.io/2016/08/16/MIT-6-824%E5%AD%A6%E4%B9%A0%E4%B9%8B%E8%B7%AF/)
 
+[Distributed systems](http://book.mixu.net/distsys/)
+
+- [1. Distributed systems at a high level](http://book.mixu.net/distsys/intro.html)

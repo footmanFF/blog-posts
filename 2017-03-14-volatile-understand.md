@@ -125,7 +125,7 @@ acquireShared()        // 读取一个volatile变量
 var r = result
 ```
 
-result 是共享变量，且没有 volatile 标注，线程 1 对 result 的写入还是对线程 2 对 result 的读取还是 happens - before 的，因为两个线程的操作中设计了一个共享的 volatile 变量的「存」与「取」。就像上面的 VolatileExample 例子一样。
+result 是共享变量，且没有 volatile 标注，线程 1 对 result 的写入还是对线程 2 对 result 的读取还是 happens - before 的，因为两个线程的操作中涉及了一个共享的 volatile 变量的「存」与「取」。就像上面的 VolatileExample 例子一样。
 
 ```java
 void innerSet(V v) {

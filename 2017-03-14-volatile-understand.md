@@ -149,9 +149,7 @@ void innerSet(V v) {
         }
     }
 }
-```
 
-```java
 V innerGet() throws InterruptedException, ExecutionException {
     acquireSharedInterruptibly(0);
     if (getState() == CANCELLED)

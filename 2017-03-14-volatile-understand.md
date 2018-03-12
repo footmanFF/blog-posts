@@ -179,13 +179,8 @@ V innerGet() throws InterruptedException, ExecutionException {
 [Java内存模型Cookbook-前言](http://ifeve.com/jmm-cookbook/)
 [JMM Cookbook(一)指令重排](http://ifeve.com/jmm-cookbook-reorderings/)
 [Java内存模型Cookbook（二）内存屏障](http://ifeve.com/jmm-cookbook-mb/)
-
 [The JSR-133 Cookbook for Compiler Writers](http://gee.cs.oswego.edu/dl/jmm/cookbook.html)
-
 The Java Language Specification, Java SE 8 Edition 17.4 Memory Model
-
 https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/package-summary.html
-
 https://www.kernel.org/doc/Documentation/memory-barriers.txt
-
 《Java 并发编程实践》第 16 章

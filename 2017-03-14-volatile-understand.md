@@ -198,7 +198,7 @@ public class Singleton{
 - singleton= new Singleton() 不是原子的，指令重排时会导致方法返回的 Singleton 引用是未完成赋值的。详细见：[深入浅出单实例SINGLETON设计模式](https://coolshell.cn/articles/265.html)
 - 这个实现 涉及了对象的发布，在没有做同步的情况下（没有 happens - before）的情况下，发布的 Singleton 对象引用和他属性引用的对象可能没有刷新的主存，要么 singleton 为 null，要么 Singleton 对象内部的属性为 null，即发布了一个处于错误状态的 Singleton 对象。
 
-解决办法当然是增加 volatile。对他的写入和读取有 happens - before 语义。另外他能保证多线程情况下的内存可见性。
+解决办法当然是增加 volatile。对他的写入和读取有 happens - before 语义，能防止指令的重排序。另外他能保证多线程情况下的内存可见性。
 
 ## 一些资料
 

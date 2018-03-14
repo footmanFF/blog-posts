@@ -12,6 +12,8 @@ tags: Java、JMM
 - Unsafe 内有内存屏障相关的方法，应该也能保证可见性。举个例子 compareAndSwapInt 方法有 volatile 的读和写的内存语义。详细见《Java 内存模型  - 程晓明》「锁内存语义的实现」一节对 ReentrantLock 的分析。
 - final 的属性的发布，有点不同，见下面的引用 [深入理解Java内存模型（六）——final](http://www.infoq.com/cn/articles/java-memory-model-6)
 
+<!-- more -->
+
 ## 问题
 
 ##### 重排序、happens-before、可见性三者的关系是什么？

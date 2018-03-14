@@ -13,6 +13,8 @@ tags: ConcurrentHashMap
 
 happens-before 是重点
 
+<!-- more -->
+
 ## 还是看代码吧
 
 ```java

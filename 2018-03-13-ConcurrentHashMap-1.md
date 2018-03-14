@@ -26,6 +26,43 @@ static final int spread(int h) {
 
 spread 的用处：[Java HashMap工作原理及实现](https://yikun.github.io/2015/04/01/Java-HashMap%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0/)
 
+initTable：
+
+```java
+private final Node<K,V>[] initTable() {
+    Node<K,V>[] tab; int sc;
+    while ((tab = table) == null || tab.length == 0) {
+        if ((sc = sizeCtl) < 0)
+            Thread.yield(); // lost initialization race; just spin
+        // CAS设置sizeCtl为-1(table初始化中)
+        else if (U.compareAndSetInt(this, SIZECTL, sc, -1)) {
+            try {
+                if ((tab = table) == null || tab.length == 0) {
+                    int n = (sc > 0) ? sc : DEFAULT_CAPACITY;
+                    @SuppressWarnings("unchecked")
+                    // 去初始化table，大小为sizeCtl
+                    Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n];
+                    table = tab = nt;
+                    // 将sizeCtl设置n-(n>>>2)，最大为n，最小为(n-n/4)
+                    // 为什么设置成这个数???
+                    sc = n - (n >>> 2);
+                }
+            } finally {
+                sizeCtl = sc;
+            }
+            break;
+        }
+    }
+    return tab;
+}
+```
+
+- sizeCtl 属性：负数表示 table 正在初始化或者扩容，-1 表示正在初始化，- (1 + 扩容线程数) 表示正在扩容。当 table 为 null 时，sizeCtl 未初始化时创立的 table 长度。初始化以后，sizeCtl 的值为 next element count value upon which to resize the table（**TODO**）。
+- initTable 方法无锁实现 table 初始化。初始化 table 的操作放在临界区内，临界区由 CAS 设置 sizeCtl 保证。临界区内的逻辑会设置 table 为新的非空的数组，并且 table 是 volatile 的，其他在临界区外的线程会最终全部退出循环，从循环下面的 return 返回。
+- 未进入临界区的线程不会疯狂循环消耗 CPU，通过调用 Thread.yield() 释放 CPU 时间。
+
+putVal：
+
 ```java
 final V putVal(K key, V value, boolean onlyIfAbsent) {
     if (key == null || value == null) throw new NullPointerException();

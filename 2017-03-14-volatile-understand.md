@@ -200,6 +200,20 @@ public class Singleton{
 
 解决办法当然是增加 volatile。对他的写入和读取有 happens - before 语义，能防止指令的重排序。另外他能保证多线程情况下的内存可见性。
 
+#### volatile 和重排序
+
+最上面给出了 volatile 变量的写入和读取时主存和内存上的变化。要保证 volatile 建立的 happens-before 关系，还需要在线程内的指令执行序列中增加一些屏障，以解决 volatile 变量读写和普通变量读写在重排序时导致的问题。
+
+![](http://note-1255449501.file.myqcloud.com/2018-03-14-065531.png)
+
+> 从上表我们可以看出：
+>
+> - 当第二个操作是 volatile 写时，不管第一个操作时什么，都不能重排序。这个规则确保 volatile 写之前的操作不会被编译器重排序到 volatile 写之后。
+> - 当第一个操作是 volatile 读时，不管第二个操作是什么，都不能重排序。这个规则确保 volatile 读之后的操作不会被编译器重排序到 volatile 读之前。
+> - 当第一个操作是 volatile 写，第二个操作是 volatile 读时，不能重排序。
+>
+> 《Java 内存模型》程晓明
+
 ## 一些资料
 
 [Java内存模型Cookbook-前言](http://ifeve.com/jmm-cookbook/)

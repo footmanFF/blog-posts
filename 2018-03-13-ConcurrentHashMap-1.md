@@ -15,7 +15,30 @@ happens-before 是重点
 
 <!-- more -->
 
+#### 内部的注释
+
+```
+* We use the top (sign) bit of Node hash fields for control
+* purposes -- it is available anyway because of addressing
+* constraints.  Nodes with negative hash fields are specially
+* handled or ignored in map methods.
+```
+
+Node 节点的整形的 Hash 属性，二进制的高几位用来作为状态使用。hash 为负的 Node 表示 Node 需要被特殊处理。负数的状态：
+
+```java
+static final int MOVED     = -1; // hash for forwarding nodes
+static final int TREEBIN   = -2; // hash for roots of trees
+static final int RESERVED  = -3; // hash for transient reservations
+```
+
+
+
 ## 还是看代码吧
+
+### put
+
+##### spread
 
 ```java
 static final int spread(int h) {
@@ -26,7 +49,7 @@ static final int spread(int h) {
 
 spread 的用处：[Java HashMap工作原理及实现](https://yikun.github.io/2015/04/01/Java-HashMap%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0/)
 
-initTable：
+##### initTable
 
 ```java
 private final Node<K,V>[] initTable() {
@@ -43,7 +66,7 @@ private final Node<K,V>[] initTable() {
                     // 去初始化table，大小为sizeCtl
                     Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n];
                     table = tab = nt;
-                    // 将sizeCtl设置n-(n>>>2)，最大为n，最小为(n-n/4)
+                    // 将sizeCtl设置n-(n>>>2)
                     // 为什么设置成这个数???
                     sc = n - (n >>> 2);
                 }
@@ -61,7 +84,25 @@ private final Node<K,V>[] initTable() {
 - initTable 方法无锁实现 table 初始化。初始化 table 的操作放在临界区内，临界区由 CAS 设置 sizeCtl 保证。临界区内的逻辑会设置 table 为新的非空的数组，并且 table 是 volatile 的，其他在临界区外的线程会最终全部退出循环，从循环下面的 return 返回。
 - 未进入临界区的线程不会疯狂循环消耗 CPU，通过调用 Thread.yield() 释放 CPU 时间。
 
-putVal：
+##### tabAt
+
+```java
+static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
+    return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);
+}
+```
+
+ABASE 是 Node[] 类型的在内存中的基础偏移，通过调用 unsafe.arrayBaseOffset 获得。ASHIFT 是 Node[] 间隔元素之间内存偏移数的二进制位数，计算方法如下：
+
+```java
+int scale = unsafe.arrayIndexScale(arrayClass);
+// numberOfLeadingZeros 方法取除了符号位，从左侧开始二进制位为0的位的个数
+int ashift = 31 - Integer.numberOfLeadingZeros(scale);
+```
+
+计算数组中一个元素的内存偏移直接理解应该是：基础偏移 + ( 下标索引 * 元素偏移量 )。但是因为数组元素的内存偏移都是 2 的指数，所以这个计算可以等价于：基础偏移 + 下标索引向左偏移元素偏移量的位数，等价于执行乘法。这里是一个优化，位运算的效率比做乘法要好。这里能这么做也是因为元素偏移量是 2 的指数，一个数乘以一个 2 的指数，相当于向左偏移乘数的位数。[测试代码](https://github.com/footmanFF/demos/blob/f4e9951fe6770b5b08d7e43241d8145b6545707f/jdk-test/src/main/java/com/footmanff/jdktest/concurrent/UnsafeTest.java)
+
+##### putVal
 
 ```java
 final V putVal(K key, V value, boolean onlyIfAbsent) {
@@ -77,6 +118,8 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
         if (tab == null || (n = tab.length) == 0)
             tab = initTable();
         else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+            // 桶不存在时，去创建一个，并原子更新进table，失败的话会继续循环
+            // 去当做桶已经存在的情况处理
             if (casTabAt(tab, i, null,
                          new Node<K,V>(hash, key, value, null)))
                 break;                   // no lock when adding to empty bin
@@ -85,12 +128,19 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
             tab = helpTransfer(tab, f);
         else {
             V oldVal = null;
+            // 在桶上加锁
             synchronized (f) {
+                // 进入锁以后重新去判断桶是否还在原位置
+                // 扩容可能会改变桶的位置。如果此处为false，继续循环重新在扩容以后的table上处理。
                 if (tabAt(tab, i) == f) {
+                    // Node的hash大于0，表示是正常的数据节点
                     if (fh >= 0) {
                         binCount = 1;
                         for (Node<K,V> e = f;; ++binCount) {
                             K ek;
+                            // 重新检查Node的hash和请求的hash是否一致，并判断Node的key和请求的Key是否一致
+                            // 如果一致就去设置Node的value
+                            // 不一致有可能是table需要做扩容，Node的hash被标记为负，Node进入其他状态
                             if (e.hash == hash &&
                                 ((ek = e.key) == key ||
                                  (ek != null && key.equals(ek)))) {
@@ -99,6 +149,11 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
                                     e.val = value;
                                 break;
                             }
+                            // 两种情况会进入这里
+                            // 1.key不一致的情况，直接利用循环去扫到链表的末尾，人后在尾部增加一个新的Node
+                            //   然后退出
+                            // 2.hash不一致，同样也会去到尾部新增一个Node，并退出
+                            // 第二种情况有疑问，是在扩容时候发生吗？此处这里的逻辑理解对吗？TODO
                             Node<K,V> pred = e;
                             if ((e = e.next) == null) {
                                 pred.next = new Node<K,V>(hash, key,
@@ -107,6 +162,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
                             }
                         }
                     }
+                    // hash小于0时，有一种状态是TREEBIN，判断出来做特殊处理
                     else if (f instanceof TreeBin) {
                         Node<K,V> p;
                         binCount = 2;
@@ -130,14 +186,6 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
     }
     addCount(1L, binCount);
     return null;
-}
-```
-
-tabAt：
-
-```java
-static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
-    return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);
 }
 ```
 

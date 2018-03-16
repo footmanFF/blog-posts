@@ -1,6 +1,6 @@
 ---
 layout: post
-title: ConcurrentHashMap分析
+title: 1.8版本的ConcurrentHashMap分析
 date: 2018-03-13
 tags: ConcurrentHashMap
 ---
@@ -32,9 +32,54 @@ static final int TREEBIN   = -2; // hash for roots of trees
 static final int RESERVED  = -3; // hash for transient reservations
 ```
 
+```
+* Maintaining API and serialization compatibility with previous
+* versions of this class introduces several oddities. Mainly: We
+* leave untouched but unused constructor arguments refering to
+* concurrencyLevel. We accept a loadFactor constructor argument,
+* but apply it only to initial table capacity (which is the only
+* time that we can guarantee to honor it.) We also declare an
+* unused "Segment" class that is instantiated in minimal form
+* only when serializing.
+```
 
+构造器里的 concurrencyLevel 和 loadFactor 没啥用了，后者只是用来初始化最初的 table。
 
 ## 还是看代码吧
+
+### 构造器
+
+```java
+public ConcurrentHashMap(int initialCapacity,
+                         float loadFactor, int concurrencyLevel) {
+    if (!(loadFactor > 0.0f) || initialCapacity < 0 || concurrencyLevel <= 0)
+        throw new IllegalArgumentException();
+    if (initialCapacity < concurrencyLevel)   // Use at least as many bins
+        initialCapacity = concurrencyLevel;   // as estimated threads
+    long size = (long)(1.0 + (long)initialCapacity / loadFactor);
+    int cap = (size >= (long)MAXIMUM_CAPACITY) ?
+        MAXIMUM_CAPACITY : tableSizeFor((int)size);
+    this.sizeCtl = cap;
+}
+```
+
+- tableSizeFor 是取大于或等于 size 的最小的 2 的乘方（此处不完全确定），但是返回结果不会大于 MAXIMUM_CAPACITY。算法见《Hackers Delight - 算法心得：高效算法的奥秘》 3.2 节，回头有时间去看看真本书。
+- HashMap 的装载因子解释 [What is the significance of load factor in HashMap?](https://stackoverflow.com/questions/10901752/what-is-the-significance-of-load-factor-in-hashmap)
+- concurrencyLevel 没啥用了，见上面的注释。
+- loadFactor 用来计算初始化 table 大小，元素容量除以 loadFactor 可以得出 rehash 的阀值，首次初始化的 table 大小大于这个阀值，以后 loadFactor 都用不到了。
+
+```java
+public ConcurrentHashMap(int initialCapacity) {
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException();
+    int cap = ((initialCapacity >= (MAXIMUM_CAPACITY >>> 1)) ?
+               MAXIMUM_CAPACITY :
+               tableSizeFor(initialCapacity + (initialCapacity >>> 1) + 1));
+    this.sizeCtl = cap;
+}
+```
+
+- 初始化的 table 的容量是大于或等于 (ic + ic / 2 + 1) 的最小的 2 的乘方。
 
 ### put
 
@@ -80,7 +125,7 @@ private final Node<K,V>[] initTable() {
 }
 ```
 
-- sizeCtl 属性：负数表示 table 正在初始化或者扩容，-1 表示正在初始化，- (1 + 扩容线程数) 表示正在扩容。当 table 为 null 时，sizeCtl 未初始化时创立的 table 长度。初始化以后，sizeCtl 的值为 next element count value upon which to resize the table（**TODO**）。
+- sizeCtl 属性：负数表示 table 正在初始化或者扩容，-1 表示正在初始化，- (1 + 扩容线程数) 表示正在扩容。当 table 为 null 时，sizeCtl 为初始化时创立的 table 长度。初始化以后，sizeCtl 的值为 next element count value upon which to resize the table（**TODO**）。此处 element count 看起来是 k-v 数。
 - initTable 方法无锁实现 table 初始化。初始化 table 的操作放在临界区内，临界区由 CAS 设置 sizeCtl 保证。临界区内的逻辑会设置 table 为新的非空的数组，并且 table 是 volatile 的，其他在临界区外的线程会最终全部退出循环，从循环下面的 return 返回。
 - 未进入临界区的线程不会疯狂循环消耗 CPU，通过调用 Thread.yield() 释放 CPU 时间。
 
@@ -138,9 +183,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
                         binCount = 1;
                         for (Node<K,V> e = f;; ++binCount) {
                             K ek;
-                            // 重新检查Node的hash和请求的hash是否一致，并判断Node的key和请求的Key是否一致
-                            // 如果一致就去设置Node的value
-                            // 不一致有可能是table需要做扩容，Node的hash被标记为负，Node进入其他状态
+                            // 从链表上查找hash和key都为一致的node
                             if (e.hash == hash &&
                                 ((ek = e.key) == key ||
                                  (ek != null && key.equals(ek)))) {
@@ -149,12 +192,8 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
                                     e.val = value;
                                 break;
                             }
-                            // 两种情况会进入这里
-                            // 1.key不一致的情况，直接利用循环去扫到链表的末尾，人后在尾部增加一个新的Node
-                            //   然后退出
-                            // 2.hash不一致，同样也会去到尾部新增一个Node，并退出
-                            // 第二种情况有疑问，是在扩容时候发生吗？此处这里的逻辑理解对吗？TODO
-                            Node<K,V> pred = e;
+                            // hash或key不一致则要去遍历链表查找
+                            // 如果遍历了链表都不存在，那么创建一个新节点
                             if ((e = e.next) == null) {
                                 pred.next = new Node<K,V>(hash, key,
                                                           value, null);

@@ -281,6 +281,7 @@ private final void addCount(long x, int check) {
 [Oracle JDK8在JVM上的改进有哪些意义？ - RednaxelaFX的回答 - 知乎](https://www.zhihu.com/question/30538696/answer/48464003)
 
 - addCount 和 fullAddCount 用到了 ThreadLocalRandom，待分析
+- ThreadLocalRandom.getProbe() 获取的是啥？ThreadLocalRandom.advanceProbe(h) 又是啥？
 - ThreadLocalRandom.getProbe() & m 的数学含义是啥？ 用一个数去和另一个数求或运算的意义是啥？
 
 ##### fullAddCount

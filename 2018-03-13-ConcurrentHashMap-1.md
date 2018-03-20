@@ -282,6 +282,8 @@ private final void addCount(long x, int check) {
 
 ##### fullAddCount
 
+在 CAS 递增 baseCount 时，遇到竞争时，使用 fullAddCount 去在多个统计变量上去做递增，这个多个统计变量就是 counterCells，这个数组的每一项是一个 CounterCell，是一个统计。
+
 ```java
 // x: 递增数量
 // wasUncontended: 是否未竞争CAS递增过CounterCell
@@ -303,10 +305,11 @@ private final void fullAddCount(long x, boolean wasUncontended) {
                         U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
                         boolean created = false;
                         try {               // Recheck under lock
+                            // 去在counterCells上创建新的CounterCell
                             CounterCell[] rs; int m, j;
                             if ((rs = counterCells) != null &&
                                 (m = rs.length) > 0 &&
-                                rs[j = (m - 1) & h] == null) {
+                                rs[j = (m - 1) & h] == null) {  // 双重检测
                                 rs[j] = r;
                                 created = true;
                             }
@@ -314,7 +317,9 @@ private final void fullAddCount(long x, boolean wasUncontended) {
                             cellsBusy = 0;
                         }
                         if (created)
+                            // 直接初始化一个统计变量，而不是去找一个统计变量递增，所以可以直接返回
                             break;
+                        // 双重检测失败，证明其他线程在counterCells同一个位置建立了CounterCell
                         continue;           // Slot is now non-empty
                     }
                 }
@@ -364,6 +369,7 @@ private final void fullAddCount(long x, boolean wasUncontended) {
             if (init)      // 首次进入时counterCells为null，只要初始化了就可以直接中断循环返回
                 break;
         }
+        // 在counterCells竞争递增失败的时候，去尝试递增baseCount，如果成功就直接可以返回
         else if (U.compareAndSwapLong(this, BASECOUNT, v = baseCount, v + x))
             break;                          // Fall back on using base
     }
@@ -371,7 +377,7 @@ private final void fullAddCount(long x, boolean wasUncontended) {
 ```
 
 - cellsBusy：1 表示 CounterCells 正在创建 ，0 表示其他状态。
-- baseCount：用于统计 Map 中的 k-v 数，baseCount 用于在没有出现竞争的情况下统计
+- baseCount：用于统计 Map 中的 k-v 数，baseCount 用于在没有出现竞争的情况下统计。
 - counterCells：数一个数组，每个数组项是一个 int，在 baseCount 上的递增出现竞争时会去取 counterCells 中的一个项进行递增，最终的 Map 中的 k-v 数总和是 baseCount 和 counterCells 所有计数之和，见下面的 subCount 方法。
 - 三个地方都回去 CAS set cellsBusy，从 0 改成 1，并发下只有一个线程能进入临界区代码。临界区代码用 try finally 去保证 cellsBusy 最终一定会被设置回 0，相当于解锁。
 - 如果 A 线程运行到「A」，另 B 线程运行到「B1」，如果 A 线程被挂起（比如 CPU 切换了执行线程），然而 B 线程继续执行，一直执行到了「B2」，这个时候 A 线程继续执行，如果没有 counterCells == as 判断，实惠重复创建 counterCells 的。这个是需要 counterCells 判断的理由。这个和并发下的单例设计模式一样，在进入锁以后需要重新判空一次。

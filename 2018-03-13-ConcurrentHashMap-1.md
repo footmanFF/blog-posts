@@ -137,7 +137,7 @@ static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
 }
 ```
 
-ABASE 是 Node[] 类型的在内存中的基础偏移，通过调用 unsafe.arrayBaseOffset 获得。ASHIFT 是 Node[] 间隔元素之间内存偏移数的二进制位数，计算方法如下：
+ABASE 是 Node [ ] 类型的在内存中的基础偏移，通过调用 unsafe.arrayBaseOffset 获得。ASHIFT 是 Node[] 间隔元素之间内存偏移数的二进制位数，计算方法如下：
 
 ```java
 int scale = unsafe.arrayIndexScale(arrayClass);
@@ -168,8 +168,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
             if (casTabAt(tab, i, null,
                          new Node<K,V>(hash, key, value, null)))
                 break;                   // no lock when adding to empty bin
-        } 
-		else if ((fh = f.hash) == MOVED)
+        } else if ((fh = f.hash) == MOVED)
             tab = helpTransfer(tab, f);
         else {
             V oldVal = null;
@@ -326,6 +325,8 @@ private final void fullAddCount(long x, boolean wasUncontended) {
                 collide = false;
             }
             else if (!wasUncontended)       // CAS already known to fail
+                // 前一个if内的逻辑是去竞争递增一个CounterCell，所以此处可以将wasUncontended设置为true
+                // 此处相当于竞争过一次了，就去换一个CounterCell去尝试递增，见下面的ThreadLocalRandom.advanceProbe
                 wasUncontended = true;      // Continue after rehash
             else if (U.compareAndSwapLong(a, CELLVALUE, v = a.value, v + x))
                 break;

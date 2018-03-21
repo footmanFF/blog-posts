@@ -83,6 +83,8 @@ https://zhuanlan.zhihu.com/p/33038831?iam=4aaee5f51c32c3ee2d20727430d50386?utm_m
 > 《redis 实战》6.2节 分布式锁
 >
 > <http://pengshuang.space/2016/10/26/Google-Chubby-学习-基本概念>
+>
+> http://zookeeper.apache.org/doc/r3.4.9/recipes.html#sc_recipes_Locks
 
 [lock-java]: https://xiaozhuanlan.com/topic/4672859130
 [Lock1]: http://zhangtielei.com/posts/blog-redlock-reasoning.html

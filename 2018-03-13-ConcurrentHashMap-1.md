@@ -383,6 +383,7 @@ private final void fullAddCount(long x, boolean wasUncontended) {
 - 三个地方都回去 CAS set cellsBusy，从 0 改成 1，并发下只有一个线程能进入临界区代码。临界区代码用 try finally 去保证 cellsBusy 最终一定会被设置回 0，相当于解锁。
 - 如果 A 线程运行到「A」，另 B 线程运行到「B1」，如果 A 线程被挂起（比如 CPU 切换了执行线程），然而 B 线程继续执行，一直执行到了「B2」，这个时候 A 线程继续执行，如果没有 counterCells == as 判断，实惠重复创建 counterCells 的。这个是需要 counterCells 判断的理由。这个和并发下的单例设计模式一样，在进入锁以后需要重新判空一次。
 - 这里的计数是使用了 counterCells，从源码的注释看，这个实现思路是和 java.util.concurrent.atomic.LongAdder 一致的，可以去研究下。
+- fullAddCount 方法的实现思路几乎和 [LongAdder](http://footmanff.com/2018/03/21/2018-03-21-LongAdder-1/) 一致。
 
 ##### sumCount
 

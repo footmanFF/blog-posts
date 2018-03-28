@@ -9,7 +9,7 @@ tags: Java、JMM
 
 - synchronized  [深入理解Java内存模型（五）——锁](http://www.infoq.com/cn/articles/java-memory-model-5)
 - volatile
-- Unsafe 内有内存屏障相关的方法，应该也能保证可见性。举个例子 compareAndSwapInt 方法有 volatile 的读和写的内存语义。详细见《Java 内存模型  - 程晓明》「锁内存语义的实现」一节对 ReentrantLock 的分析。
+- Unsafe 内有内存屏障相关的方法，应该也能保证可见性。举个例子 compareAndSwapInt 方法有 volatile 的读和写的内存语义。详细见《Java 内存模型  - 程晓明》「锁内存语义的实现」一节对 ReentrantLock 的分析。（2018 - 03 - 28 更新，另外见 http://www.infoq.com/cn/articles/java-memory-model-5，这个语义是从程晓明的文章中看到的，那么是不是 CAS 变更一个没有用 volatile 申明的变量也是具有 volatile 读和写的语义的？现在看到的代码中一般都是 CAS 去改 volatile 的变量，比如 AQS 中。**TODO**）
 - final 的属性的发布，有点不同，见下面的引用 [深入理解Java内存模型（六）——final](http://www.infoq.com/cn/articles/java-memory-model-6)
 
 <!-- more -->

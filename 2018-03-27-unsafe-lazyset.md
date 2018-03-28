@@ -21,6 +21,7 @@ final boolean tryUnpush(ForkJoinTask<?> t) {
 ```
 
 U.putOrderedInt 这个方法有点迷惑，他和 AtomicInteger 的 lazySet 是一个机制。然后查了些资料：
+<!-- more -->
 
 https://www.zhihu.com/question/43691809
 https://www.zhihu.com/question/60888757

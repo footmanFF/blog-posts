@@ -198,16 +198,71 @@ public final short getForkJoinTaskTag() {
 
 ## WorkQueue 的 top 和 base 的维护
 
-WorkQueue 的是一个用数组实现的双端队列，队列内存 ForkJoinTask，每次新建，
-
-
-
-左侧用于窃取
+WorkQueue 是一个用数组实现的双端队列，队列内存 ForkJoinTask。每个线程内部会维护一个 WorkQueue。当一个任务扩散出新的分支任务时，新的任务就会被 push 进双端队列的有段，这个操作执行的时候只会去 push 自己线程的 WorkQueue，所以这个动作不存在竞争，是线程安全的（至少队列非空时是的）。新扩散的任务进入双端队列的右边，用 top 来维护到底新增到了哪个数组下标记。任务的窃取就从队列的左边去处理，用 base 作为下标，当一个线程执行任务的 join 进入，但是任务不能立刻执行时会去其他线程盗取一个任务，也就是从那个线程的双端队列的左边，利用 base 索引去拿出一个任务，然后自己执行，这个动作是存在竞争的，详细的内容等看到了对应的代码以后再补充。 
 
 ```java
 static final class WorkQueue {
 	volatile int base;         // index of next slot for poll
     int top;                   // index of next slot for push
+    ForkJoinTask<?>[] array;   // the elements (initially unallocated)
 }
 ```
 
+#### push
+
+push 方法是双端队列右侧的新增操作。
+
+```java
+final void push(ForkJoinTask<?> task) {
+    ForkJoinTask<?>[] a; ForkJoinPool p;
+    int b = base, s = top, n;
+    if ((a = array) != null) {    // ignore if queue removed
+        int m = a.length - 1;     // fenced write for task visibility
+        U.putOrderedObject(a, ((m & s) << ASHIFT) + ABASE, task);
+        U.putOrderedInt(this, QTOP, s + 1);
+        if ((n = s - b) <= 1) {
+            if ((p = pool) != null)
+                p.signalWork(p.workQueues, this);
+        }
+        else if (n >= m)
+            growArray();
+    }
+}
+```
+
+#### poll
+
+poll 是双端队列左侧的获取操作。
+
+```java
+final ForkJoinTask<?> poll() {
+    ForkJoinTask<?>[] a; int b; ForkJoinTask<?> t;
+    while ((b = base) - top < 0 && (a = array) != null) {
+        int j = (((a.length - 1) & b) << ASHIFT) + ABASE;
+        t = (ForkJoinTask<?>)U.getObjectVolatile(a, j);
+        if (base == b) {
+            if (t != null) {
+                if (U.compareAndSwapObject(a, j, t, null)) {
+                    base = b + 1;
+                    return t;
+                }
+            }
+            else if (b + 1 == top) // now empty
+                break;
+        }
+    }
+    return null;
+}
+```
+
+### 说说两个方法的 base 和 top 的维护
+
+push 每次都需要在数组的 top + 1 个位置新增任务，pull 每次需要 base + 1 个位置去盗取任务。他们都用类似这样的方式去计算需要操作的下标：
+
+```
+(array.length - 1) & (base或top的值)
+```
+
+这里比较有意思，因为 array 被初始化的容量为 1 << n（n 是写死的 13，每次扩容的时候再左移一位），1 << n 再减去 1 的二进制表示全为 1。所以 array.length - 1 的二进制表示全为 1，那么他和 base 或者 top 执行逻辑与，在 base 或者 top 小于等于 array.length - 1 时得到的结果就是 base 或 top 本身。当 base 或者 top 大于 array.length - 1 时，从新从最小的数组下标开始（即从 0 开始）。
+
+随着 base 和 top 的增大，(array.length - 1) & (base或top的值) 这个变量计算的结果永远不会超出数组的下标范围，并且可以循环利用数组元素。非常方便。

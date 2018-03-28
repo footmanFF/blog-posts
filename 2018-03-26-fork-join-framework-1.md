@@ -33,6 +33,8 @@ private int doJoin() {
 }
 ```
 
+<!--more-->
+
 #### externalAwaitDone
 
 ```java

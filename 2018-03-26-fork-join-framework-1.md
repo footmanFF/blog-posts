@@ -76,23 +76,28 @@ final void externalPush(ForkJoinTask<?> task) {
     int rs = runState;
     if ((ws = workQueues) != null && (m = (ws.length - 1)) >= 0 &&
         (q = ws[m & r & SQMASK]) != null && r != 0 && rs > 0 &&
-        U.compareAndSwapInt(q, QLOCK, 0, 1)) {
+        U.compareAndSwapInt(q, QLOCK, 0, 1)) { // 加锁
         ForkJoinTask<?>[] a; int am, n, s;
         if ((a = q.array) != null &&
-            (am = a.length - 1) > (n = (s = q.top) - q.base)) {
-            int j = ((am & s) << ASHIFT) + ABASE;
-            U.putOrderedObject(a, j, task);
-            U.putOrderedInt(q, QTOP, s + 1);
-            U.putIntVolatile(q, QLOCK, 0);
-            if (n <= 1)
+            (am = a.length - 1) > (n = (s = q.top) - q.base)) { // (1)
+            int j = ((am & s) << ASHIFT) + ABASE;  // (2)
+            U.putOrderedObject(a, j, task);   // 在数组的top位置新增任务
+            U.putOrderedInt(q, QTOP, s + 1);  // 给top+1
+            U.putIntVolatile(q, QLOCK, 0); // 释放锁
+            if (n <= 1)  // (3)
                 signalWork(ws, q);
             return;
         }
+        // 释放锁
         U.compareAndSwapInt(q, QLOCK, 1, 0);
     }
     externalSubmit(task);
 }
 ```
+
+（1） 处，q.top - q.base 表示现在队列内的任务数，q.top - q.base < a.length - 1 表示队列内任务数小于数组容量，那么就会往下执行，在数组的 top 位置增加参数里的 task，并且给 top 加 1，最后释放锁。（2）处 am & s 的含义见下面「WorkQueue 的 top 和 base 的维护」的描述，原理一样。
+
+（3）当队列内任务数为 0个 或者 1个 或者 2个时，去执行 signalWork。
 
 #### tryUnpush
 
@@ -163,6 +168,67 @@ final int awaitJoin(WorkQueue w, ForkJoinTask<?> task, long deadline) {
     return s;
 }
 ```
+
+#### lockRunState
+
+```java
+private int lockRunState() {
+    int rs;
+    return ((((rs = runState) & RSLOCK) != 0 ||
+             !U.compareAndSwapInt(this, RUNSTATE, rs, rs |= RSLOCK)) ?
+            awaitRunStateLock() : rs);
+}
+```
+
+runState 与 RSLOCK 求与运算，检测 runState 中 lock 位，不为 0 表示已经锁住。如果没锁住，就去尝试 CAS 加锁，runState 和 RSLOCK 求或运算是将 runState 的 lock 位设置为 1，即加锁。如果成功返回 runState，失败则进入  awaitRunStateLock 方法。
+
+#### awaitRunStateLock
+
+```java
+private int awaitRunStateLock() {
+    Object lock;
+    boolean wasInterrupted = false;
+    for (int spins = SPINS, r = 0, rs, ns;;) {
+        if (((rs = runState) & RSLOCK) == 0) {
+            if (U.compareAndSwapInt(this, RUNSTATE, rs, ns = rs | RSLOCK)) {
+                if (wasInterrupted) {
+                    try {
+                        Thread.currentThread().interrupt();
+                    } catch (SecurityException ignore) {
+                    }
+                }
+                return ns;
+            }
+        }
+        else if (r == 0)
+            r = ThreadLocalRandom.nextSecondarySeed();
+        else if (spins > 0) {
+            r ^= r << 6; r ^= r >>> 21; r ^= r << 7; // xorshift
+            if (r >= 0)
+                --spins;
+        }
+        else if ((rs & STARTED) == 0 || (lock = stealCounter) == null)
+            Thread.yield();   // initialization race
+        else if (U.compareAndSwapInt(this, RUNSTATE, rs, rs | RSIGNAL)) {
+            synchronized (lock) {
+                if ((runState & RSIGNAL) != 0) {
+                    try {
+                        lock.wait();
+                    } catch (InterruptedException ie) {
+                        if (!(Thread.currentThread() instanceof
+                              ForkJoinWorkerThread))
+                            wasInterrupted = true;
+                    }
+                }
+                else
+                    lock.notifyAll();
+            }
+        }
+    }
+}
+```
+
+
 
 ## ForkJoinTask 的 status
 
@@ -266,3 +332,7 @@ push 每次都需要在数组的 top + 1 个位置新增任务，pull 每次需�
 这里比较有意思，因为 array 被初始化的容量为 1 << n（n 是写死的 13，每次扩容的时候再左移一位），1 << n 再减去 1 的二进制表示全为 1。所以 array.length - 1 的二进制表示全为 1，那么他和 base 或者 top 执行逻辑与，在 base 或者 top 小于等于 array.length - 1 时得到的结果就是 base 或 top 本身。当 base 或者 top 大于 array.length - 1 时，从新从最小的数组下标开始（即从 0 开始）。
 
 随着 base 和 top 的增大，( array.length - 1 ) & ( base 或 top 的值 ) 这个变量计算的结果永远不会超出数组的下标范围，并且可以循环利用数组元素。这里非常的优雅，开始看了很久没看明白，后来在 debug 的时候才看出玄机。
+
+### WorkQueue 的 top 和数组的维护为什么要用 putOrderedObject 和 putOrderedInt
+
+TODO

@@ -75,8 +75,7 @@ final void externalPush(ForkJoinTask<?> task) {
     int r = ThreadLocalRandom.getProbe();
     int rs = runState;
     if ((ws = workQueues) != null && (m = (ws.length - 1)) >= 0 &&
-        // TODO m&r&SQMASK 这段很关键，非常关键
-        // 见 https://blog.csdn.net/yinwenjie/article/details/72639297
+        //(4)
         (q = ws[m & r & SQMASK]) != null && r != 0 && rs > 0 &&
         U.compareAndSwapInt(q, QLOCK, 0, 1)) { // 加锁
         ForkJoinTask<?>[] a; int am, n, s;
@@ -100,6 +99,8 @@ final void externalPush(ForkJoinTask<?> task) {
 （1） 处，q.top - q.base 表示现在队列内的任务数，q.top - q.base < a.length - 1 表示队列内任务数小于数组容量，那么就会往下执行，在数组的 top 位置增加参数里的 task，并且给 top 加 1，最后释放锁。（2）处 am & s 的含义见下面「WorkQueue 的 top 和 base 的维护」的描述，原理一样。
 
 （3）当队列内任务数为 0个 或者 1个 或者 2个时，去执行 signalWork。
+
+（4）m & r & SQMASK，m & r 是随机取一个 0 - m 的数，再与 SQMASK 求与获得一个将二进制最低位设为 0，得到一个偶数。外部任务提交的时候，会取 workQueues 上偶数下标的 WorkQueue，然后将任务加到队列内。
 
 #### externalSubmit
 
@@ -128,6 +129,7 @@ private void externalSubmit(ForkJoinTask<?> task) {
                     // create workQueues array with size a power of two
                     int p = config & SMASK; // ensure at least 2 slots
                     int n = (p > 1) ? p - 1 : 1;
+                    // 这里的位运算见下面对SMASK的解析
                     n |= n >>> 1; n |= n >>> 2;  n |= n >>> 4;
                     n |= n >>> 8; n |= n >>> 16; n = (n + 1) << 1;
                     workQueues = new WorkQueue[n];
@@ -137,6 +139,7 @@ private void externalSubmit(ForkJoinTask<?> task) {
                 unlockRunState(rs, (rs & ~RSLOCK) | ns);
             }
         }
+        // 获取WorkQueues的偶数位的队列，并尝试增加任务
         else if ((q = ws[k = r & m & SQMASK]) != null) {
             if (q.qlock == 0 && U.compareAndSwapInt(q, QLOCK, 0, 1)) {
                 ForkJoinTask<?>[] a = q.array;
@@ -160,6 +163,7 @@ private void externalSubmit(ForkJoinTask<?> task) {
             }
             move = true;                   // move on failure
         }
+        // 创建在WorkQueues的偶数位创建队列
         else if (((rs = runState) & RSLOCK) == 0) { // create new queue
             q = new WorkQueue(this, null);
             q.hint = r;
@@ -262,27 +266,37 @@ private int lockRunState() {
 
 runState 与 RSLOCK 求与运算，检测 runState 中 lock 位，不为 0 表示已经锁住。如果没锁住，就去尝试 CAS 加锁，runState 和 RSLOCK 求或运算是将 runState 的 lock 位设置为 1，即加锁。如果成功返回 runState，失败则进入  awaitRunStateLock 方法。
 
+利用 runState 的最右侧的二进制位作为加锁标识。
+
 #### awaitRunStateLock
 
 ```java
+// 加锁失败以后进入等待，等待锁变为可用
 private int awaitRunStateLock() {
     Object lock;
     boolean wasInterrupted = false;
+    // 自旋
     for (int spins = SPINS, r = 0, rs, ns;;) {
+        // 自旋中发现锁可用
         if (((rs = runState) & RSLOCK) == 0) {
+            // 重新尝试加锁
             if (U.compareAndSwapInt(this, RUNSTATE, rs, ns = rs | RSLOCK)) {
+                // 处理中断标识
                 if (wasInterrupted) {
                     try {
                         Thread.currentThread().interrupt();
                     } catch (SecurityException ignore) {
                     }
                 }
+                // 成功即可返回
                 return ns;
             }
         }
         else if (r == 0)
+            // 设置为下一个伪随机数
             r = ThreadLocalRandom.nextSecondarySeed();
         else if (spins > 0) {
+            // 如果自旋次数大于0，利用伪随机数，随机自旋一定次数
             r ^= r << 6; r ^= r >>> 21; r ^= r << 7; // xorshift
             if (r >= 0)
                 --spins;
@@ -308,9 +322,9 @@ private int awaitRunStateLock() {
 }
 ```
 
+## 一些理解了的机制
 
-
-## ForkJoinTask 的 status
+### ForkJoinTask 的 status
 
 ForkJoinTask 的 status 最左侧 4 位是任务状态，最右边 2 个字节是标签，最右边的 16 位 ForkJoinTask 本身不会去使用，他提供了一系列 public 方法给用户去设置和获取，提供出这个是为了让用户去给任务打标签，用来避免一些任务分发时的问题，具体见 [ForkJoinTask](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinTask.html) 。status 左侧 4 位的定义如下：
 
@@ -342,7 +356,7 @@ public final short getForkJoinTaskTag() {
 }
 ```
 
-## WorkQueue 的 top 和 base 的维护
+### WorkQueue 的 top 和 base 的维护
 
 WorkQueue 是一个用数组实现的双端队列，队列内存 ForkJoinTask。每个线程内部会维护一个 WorkQueue。当一个任务扩散出新的分支任务时，新的任务就会被 push 进双端队列的有段，这个操作执行的时候只会去 push 自己线程的 WorkQueue，所以这个动作不存在竞争，是线程安全的（至少队列非空时是的）。新扩散的任务进入双端队列的右边，用 top 来维护到底新增到了哪个数组下标记。任务的窃取就从队列的左边去处理，用 base 作为下标，当一个线程执行任务的 join 进入，但是任务不能立刻执行时会去其他线程盗取一个任务，也就是从那个线程的双端队列的左边，利用 base 索引去拿出一个任务，然后自己执行，这个动作是存在竞争的，详细的内容等看到了对应的代码以后再补充。 
 
@@ -469,3 +483,5 @@ n = n << 1;
 ```
 
 结合上述分析，workQueues 的初始容量是大于 p 的最小的 2 的幂的两倍。
+
+### ForkJoinPool 中的锁

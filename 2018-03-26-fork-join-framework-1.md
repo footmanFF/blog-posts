@@ -75,6 +75,8 @@ final void externalPush(ForkJoinTask<?> task) {
     int r = ThreadLocalRandom.getProbe();
     int rs = runState;
     if ((ws = workQueues) != null && (m = (ws.length - 1)) >= 0 &&
+        // TODO m&r&SQMASK 这段很关键，非常关键
+        // 见 https://blog.csdn.net/yinwenjie/article/details/72639297
         (q = ws[m & r & SQMASK]) != null && r != 0 && rs > 0 &&
         U.compareAndSwapInt(q, QLOCK, 0, 1)) { // 加锁
         ForkJoinTask<?>[] a; int am, n, s;
@@ -98,6 +100,84 @@ final void externalPush(ForkJoinTask<?> task) {
 （1） 处，q.top - q.base 表示现在队列内的任务数，q.top - q.base < a.length - 1 表示队列内任务数小于数组容量，那么就会往下执行，在数组的 top 位置增加参数里的 task，并且给 top 加 1，最后释放锁。（2）处 am & s 的含义见下面「WorkQueue 的 top 和 base 的维护」的描述，原理一样。
 
 （3）当队列内任务数为 0个 或者 1个 或者 2个时，去执行 signalWork。
+
+#### externalSubmit
+
+```java
+private void externalSubmit(ForkJoinTask<?> task) {
+    int r;                                    // initialize caller's probe
+    if ((r = ThreadLocalRandom.getProbe()) == 0) {
+        ThreadLocalRandom.localInit();
+        r = ThreadLocalRandom.getProbe();
+    }
+    for (;;) {
+        WorkQueue[] ws; WorkQueue q; int rs, m, k;
+        boolean move = false;
+        if ((rs = runState) < 0) {
+            tryTerminate(false, false);     // help terminate
+            throw new RejectedExecutionException();
+        }
+        else if ((rs & STARTED) == 0 ||     // initialize
+                 ((ws = workQueues) == null || (m = ws.length - 1) < 0)) {
+            int ns = 0;
+            rs = lockRunState();
+            try {
+                if ((rs & STARTED) == 0) {
+                    U.compareAndSwapObject(this, STEALCOUNTER, null,
+                                           new AtomicLong());
+                    // create workQueues array with size a power of two
+                    int p = config & SMASK; // ensure at least 2 slots
+                    int n = (p > 1) ? p - 1 : 1;
+                    n |= n >>> 1; n |= n >>> 2;  n |= n >>> 4;
+                    n |= n >>> 8; n |= n >>> 16; n = (n + 1) << 1;
+                    workQueues = new WorkQueue[n];
+                    ns = STARTED;
+                }
+            } finally {
+                unlockRunState(rs, (rs & ~RSLOCK) | ns);
+            }
+        }
+        else if ((q = ws[k = r & m & SQMASK]) != null) {
+            if (q.qlock == 0 && U.compareAndSwapInt(q, QLOCK, 0, 1)) {
+                ForkJoinTask<?>[] a = q.array;
+                int s = q.top;
+                boolean submitted = false; // initial submission or resizing
+                try {                      // locked version of push
+                    if ((a != null && a.length > s + 1 - q.base) ||
+                        (a = q.growArray()) != null) {
+                        int j = (((a.length - 1) & s) << ASHIFT) + ABASE;
+                        U.putOrderedObject(a, j, task);
+                        U.putOrderedInt(q, QTOP, s + 1);
+                        submitted = true;
+                    }
+                } finally {
+                    U.compareAndSwapInt(q, QLOCK, 1, 0);
+                }
+                if (submitted) {
+                    signalWork(ws, q);
+                    return;
+                }
+            }
+            move = true;                   // move on failure
+        }
+        else if (((rs = runState) & RSLOCK) == 0) { // create new queue
+            q = new WorkQueue(this, null);
+            q.hint = r;
+            q.config = k | SHARED_QUEUE;
+            q.scanState = INACTIVE;
+            rs = lockRunState();           // publish index
+            if (rs > 0 &&  (ws = workQueues) != null &&
+                k < ws.length && ws[k] == null)
+                ws[k] = q;                 // else terminated
+            unlockRunState(rs, rs & ~RSLOCK);
+        }
+        else
+            move = true;                   // move if busy
+        if (move)
+            r = ThreadLocalRandom.advanceProbe(r);
+    }
+}
+```
 
 #### tryUnpush
 
@@ -336,3 +416,56 @@ push 每次都需要在数组的 top + 1 个位置新增任务，pull 每次需�
 ### WorkQueue 的 top 和数组的维护为什么要用 putOrderedObject 和 putOrderedInt
 
 TODO
+
+### SMASK 是干什么用的
+
+```java
+static final int SMASK        = 0xffff;        // short bits == max index
+```
+
+SMASK 值为 65535，二进制位 1111111111111111。然后看构造器中对 config 的初始化。
+
+```java
+this.config = (parallelism & SMASK) | mode;
+```
+
+parallelism & SMASK 是将 parallelism 限制到最大 65535。mode 有两种情况：
+
+```java
+static final int LIFO_QUEUE   = 0;
+static final int FIFO_QUEUE   = 1 << 16;   // 二进制 10000000000000000
+```
+
+parallelism & SMASK 和 0 算或运算其实还是原样，但是和 1 << 16 算或运算得到的结果是相对于 parallelism & SMASK 加 65535。因为前者最大值是 65535，那么从左算起第 17 个二进制位是 0。1 << 16 刚好是从左算起第 17 个二进制位是 1，求或运算就相当于增加 65535。 默认的构造器使用 LIFO_QUEUE，即 config 是小于等于 65535 的。如果用 FIFO_QUEUE，是大于 65535 的。
+
+ForkJoinPool 的 workQueues 的初始容量是这么定的：
+
+```java
+// 将config从左侧17位开始的二进制位设为0
+int p = config & SMASK; // ensure at least 2 slots
+int n = (p > 1) ? p - 1 : 1;
+n |= n >>> 1; n |= n >>> 2;  n |= n >>> 4; //(1)
+n |= n >>> 8; n |= n >>> 16; n = (n + 1) << 1; //(2)
+workQueues = new WorkQueue[n];
+```
+
+上述位运算的测试在 [这里（test3方法）](https://github.com/footmanFF/demos/blob/8c57e57c9606c5767c11049994abb92ad6abba0f/jdk-test/src/main/java/com/footmanff/jdktest/bit/BitTest.java)。（1）和（2）两行的目的是为了求大于 n 的最小的 2 的幂。值是 2 的幂的数是最高位为 1，其他位都为 0 的数。如果要求大于一个数的 2 的幂，就是将这个数除了最高位以外所有其他的位设为 1，然后再将这个数 + 1。按照这个思路去看上面的代码就能理解了：
+
+```java
+// 因为最高位一定为1，右移1位再与原值求或运算，相当于将最高和次最高位设置为1
+n |= n >>> 1;
+// 第一步已经将最高和次最高位设置为1，这次可以移动2位再求或
+// 一次性将右边第3第4位置设置为1
+n |= n >>> 2;  
+// 依次类推
+n |= n >>> 4;
+n |= n >>> 8; 
+n |= n >>> 16; 
+// 因为入参n其实被限制了最大值为65535(与SMARK做过与运算)
+// 所以执行到这里，最高位右侧的二进制位全为1了，再加1就获得大于2的最小的2的幂了
+n = (n + 1);
+// 最后还会左移1位，相当于乘以2
+n = n << 1;
+```
+
+结合上述分析，workQueues 的初始容量是大于 p 的最小的 2 的幂的两倍。

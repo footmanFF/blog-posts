@@ -81,6 +81,9 @@ load-load 等等这些个内存屏障的理解比较头疼，可以看看这个�
 | 屏障类型   | 描述        |
 | ---------- | ----------- |
 | store-load | TODO 。。。 |
+| load-load  | TODO ...    |
+
+内存屏障的资料：http://b2e699b3.wiz03.com/share/s/2OVFCP1_wkXs20LtbT1nXNrj0EqwFC1zZAjT2bCeRi3Tzco2
 
 ### happens-before
 
@@ -214,7 +217,7 @@ public class Singleton{
 >
 > 《Java 内存模型》程晓明
 
-## 一些资料
+# 一些资料
 
 [Java内存模型Cookbook-前言](http://ifeve.com/jmm-cookbook/)
 [JMM Cookbook(一)指令重排](http://ifeve.com/jmm-cookbook-reorderings/)

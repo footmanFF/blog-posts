@@ -34,6 +34,20 @@ tags: Java、JMM
 
 [理解 Memory barrier（内存屏障）](http://b2e699b3.wiz03.com/share/s/2OVFCP1_wkXs20LtbT1nXNrj0EqwFC1zZAjT2bCeRi3Tzco2) 这篇文章更底层的解释了内存屏障。前半部分对「编译时内存乱序访问」和「运行时内存乱序访问」的描述比较细致。
 
+> ## Memory barrier 简介
+>
+> 程序在运行时内存实际的访问顺序和程序代码编写的访问顺序不一定一致，这就是内存乱序访问。内存乱序访问行为出现的理由是为了提升程序运行时的性能。内存乱序访问主要发生在两个阶段：
+>
+> 1. 编译时，编译器优化导致内存乱序访问（指令重排）
+> 2. 运行时，多 CPU 间交互引起内存乱序访问
+>
+> Memory barrier 能够让 CPU 或编译器在内存访问上有序。一个 Memory barrier 之前的内存访问操作必定先于其之后的完成。Memory barrier 包括两类：
+>
+> 1. 编译器 barrier
+> 2. CPU Memory barrier
+>
+> http://b2e699b3.wiz03.com/share/s/2OVFCP1_wkXs20LtbT1nXNrj0EqwFC1zZAjT2bCeRi3Tzco2?
+
 ##### ReentrantLock（AQS）是不是能保证可见性？
 
 是的，AQS内部是用了 volatile 和 CAS 去做的，都能保证内存可见性。

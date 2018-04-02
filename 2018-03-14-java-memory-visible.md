@@ -46,7 +46,7 @@ tags: Java、JMM
 > 1. 编译器 barrier
 > 2. CPU Memory barrier
 >
-> http://b2e699b3.wiz03.com/share/s/2OVFCP1_wkXs20LtbT1nXNrj0EqwFC1zZAjT2bCeRi3Tzco2?
+> 引用自：http://b2e699b3.wiz03.com/share/s/2OVFCP1_wkXs20LtbT1nXNrj0EqwFC1zZAjT2bCeRi3Tzco2?
 
 ##### ReentrantLock（AQS）是不是能保证可见性？
 

@@ -78,10 +78,10 @@ load 和 store 似乎是字节码指令。那么如何理解他们，为什么�
 
 load-load 等等这些个内存屏障的理解比较头疼，可以看看这个：http://ifeve.com/memory-barriers-or-fences/
 
-| 屏障类型   | 描述        |
-| ---------- | ----------- |
-| store-load | TODO 。。。 |
-| load-load  | TODO ...    |
+| 屏障类型   | 描述     |
+| ---------- | -------- |
+| store-load | TODO ... |
+| load-load  | TODO ... |
 
 内存屏障的资料：http://b2e699b3.wiz03.com/share/s/2OVFCP1_wkXs20LtbT1nXNrj0EqwFC1zZAjT2bCeRi3Tzco2
 

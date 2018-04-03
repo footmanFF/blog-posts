@@ -339,7 +339,7 @@ private void unlockRunState(int oldRunState, int newRunState) {
 }
 ```
 
-「1」处的 CAS 是为了设置 runState 为 newRunState，也比较好理解，那为什么会有失败的情况呢（要不然也不会有 if 里面的代码）。失败的情况发生在当锁被获取以后，又有新的线程去尝试加锁，这个时候会进入 awaitRunStateLock 方法，这个方法的逻辑见上述，最后在尝试了自旋重试还是无法获得锁时，会去设置 runState 的 signal 位为1，相当于标识了「当前有线程处于阻塞等待中，需要被唤醒」。这样，自然 unlockRunState 方法的 CAS 操作就失败了，然后 if 块里的代码逻辑也比较清楚了。newRunState 的 signal 位没有被设置，「2」处会清楚 signal 位为 0。然后在 lock 上调用 notifyAll 去唤醒阻塞的线程。
+「1」处的 CAS 是为了设置 runState 为 newRunState，也比较好理解，那为什么会有失败的情况呢（要不然也不会有 if 里面的代码）。失败的情况发生在当锁被获取以后，又有新的线程去尝试加锁，这个时候会进入 awaitRunStateLock 方法，这个方法的逻辑见上述，最后在尝试了自旋重试还是无法获得锁时，会去设置 runState 的 signal 位为1，相当于标识了「当前有线程处于阻塞等待中，需要被唤醒」。这样，自然 unlockRunState 方法的 CAS 操作就失败了，然后 if 块里的代码逻辑也比较清楚了。newRunState 的 signal 位没有被设置，「2」处会清除 signal 位为 0。然后在 lock 上调用 notifyAll 去唤醒阻塞的线程。
 
 ## 一些理解了的机制
 

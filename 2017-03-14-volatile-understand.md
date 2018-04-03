@@ -213,7 +213,7 @@ public class Singleton{
 
 > 从上表我们可以看出：
 >
-> - 当第二个操作是 volatile 写时，不管第一个操作时什么，都不能重排序。这个规则确保 volatile 写之前的操作不会被编译器重排序到 volatile 写之后。
+> - 当第二个操作是 volatile 写时，不管第一个操作是什么，都不能重排序。这个规则确保 volatile 写之前的操作不会被编译器重排序到 volatile 写之后。
 > - 当第一个操作是 volatile 读时，不管第二个操作是什么，都不能重排序。这个规则确保 volatile 读之后的操作不会被编译器重排序到 volatile 读之前。
 > - 当第一个操作是 volatile 写，第二个操作是 volatile 读时，不能重排序。
 >

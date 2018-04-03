@@ -361,6 +361,8 @@ private static final int  SHUTDOWN   = 1 << 31;
 
 unlockRunState 解锁的同时还能去更新 runState，ForkJoinPool 所有对 runState 的修改都是通过 unlockRunState 的。
 
+那么这个全局锁是哪些地方用到呢，只要看哪些地方在调用 lockRunState 就知道了，目前看到的有一个是 externalSubmit 方法，就是从外部向 ForkJoinPool 提交任务时，如果 WorkQueues 没创建，或者在随机（通过 ThreadLocalRandom.getProbe 做 hash，参见 SMASK）选取 WorkQueues 上的 queue 时，发现选取的位置上的 queue 为 null。这两种情况一个需要新建 queue 数组，一个需要新建 queue 本身，两者都加了锁。
+
 ### ForkJoinTask 的 status
 
 ForkJoinTask 的 status 最左侧 4 位是任务状态，最右边 2 个字节是标签，最右边的 16 位 ForkJoinTask 本身不会去使用，他提供了一系列 public 方法给用户去设置和获取，提供出这个是为了让用户去给任务打标签，用来避免一些任务分发时的问题，具体见 [ForkJoinTask](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinTask.html) 。status 左侧 4 位的定义如下：

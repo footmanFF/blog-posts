@@ -264,9 +264,7 @@ private int lockRunState() {
 }
 ```
 
-runState 与 RSLOCK 求与运算，检测 runState 中 lock 位，不为 0 表示已经锁住。如果没锁住，就去尝试 CAS 加锁，runState 和 RSLOCK 求或运算是将 runState 的 lock 位设置为 1，即加锁。如果成功返回 runState，失败则进入  awaitRunStateLock 方法。
-
-利用 runState 的最右侧的二进制位作为加锁标识。
+runState 与 RSLOCK 求与运算，检测 runState 中 lock 位，不为 0 表示已经锁住。如果没锁住，就去尝试 CAS 加锁，runState 和 RSLOCK 求或运算是将 runState 的 lock 位设置为 1，即加锁。如果成功返回 runState，失败则进入  awaitRunStateLock 方法。利用 runState 的最右侧的二进制位作为加锁标识。
 
 #### awaitRunStateLock
 
@@ -302,11 +300,15 @@ private int awaitRunStateLock() {
                 --spins;
         }
         else if ((rs & STARTED) == 0 || (lock = stealCounter) == null)
+            // rs & STARTED 为0，或者stealCounter为null表示未"初始化"
             Thread.yield();   // initialization race
         else if (U.compareAndSwapInt(this, RUNSTATE, rs, rs | RSIGNAL)) {
+            // 在自旋重试以后，任然无法获得锁，就去设置runState的signal状态
             synchronized (lock) {
                 if ((runState & RSIGNAL) != 0) {
                     try {
+                        // 双重检测以后，让线程进入wait
+                        // 此处由unlockRunState方法来唤醒
                         lock.wait();
                     } catch (InterruptedException ie) {
                         if (!(Thread.currentThread() instanceof
@@ -322,7 +324,42 @@ private int awaitRunStateLock() {
 }
 ```
 
+#### unlockRunState
+
+```java
+private void unlockRunState(int oldRunState, int newRunState) {
+    // (1)
+    if (!U.compareAndSwapInt(this, RUNSTATE, oldRunState, newRunState)) {
+        Object lock = stealCounter;
+        // (2)
+        runState = newRunState;              // clears RSIGNAL bit
+        if (lock != null)
+            synchronized (lock) { lock.notifyAll(); }
+    }
+}
+```
+
+「1」处的 CAS 是为了设置 runState 为 newRunState，也比较好理解，那为什么会有失败的情况呢（要不然也不会有 if 里面的代码）。失败的情况发生在当锁被获取以后，又有新的线程去尝试加锁，这个时候会进入 awaitRunStateLock 方法，这个方法的逻辑见上述，最后在尝试了自旋重试还是无法获得锁时，会去设置 runState 的 signal 位为1，相当于标识了「当前有线程处于阻塞等待中，需要被唤醒」。这样，自然 unlockRunState 方法的 CAS 操作就失败了，然后 if 块里的代码逻辑也比较清楚了。newRunState 的 signal 位没有被设置，「2」处会清楚 signal 位为 0。然后在 lock 上调用 notifyAll 去唤醒阻塞的线程。
+
 ## 一些理解了的机制
+
+### lockRunState 和 unlockRunState
+
+runState 是一个整形，他是一个符合的状态变量，用他的二进制位表示一些状态：
+
+```java
+// runState bits: SHUTDOWN must be negative, others arbitrary powers of two
+private static final int  RSLOCK     = 1;
+private static final int  RSIGNAL    = 1 << 1;
+private static final int  STARTED    = 1 << 2;
+private static final int  STOP       = 1 << 29;
+private static final int  TERMINATED = 1 << 30;
+private static final int  SHUTDOWN   = 1 << 31;
+```
+
+左侧第一位表示加锁状态，1为加锁。lockRunState 和 unlockRunState 详细的逻辑见上面的描述。lockRunState 方法利用 runState 的一个二进制位去作为加锁标识，来实现一个全局的锁。加锁失败会进行随机次数的自旋。自旋以后仍然无法获得锁时，就去在 stealCounter 上加锁并阻塞。这里的加锁失败就阻塞是为了避免很多线程尝试加锁，但是无法立刻获得锁时会导致的频繁的自旋，过多的自旋消耗了 CPU 资源。进入阻塞就释放了 CPU 时间。
+
+unlockRunState 解锁的同时还能去更新 runState，ForkJoinPool 所有对 runState 的修改都是通过 unlockRunState 的。
 
 ### ForkJoinTask 的 status
 

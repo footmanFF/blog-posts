@@ -468,7 +468,7 @@ push 每次都需要在数组的 top + 1 个位置新增任务，pull 每次需�
 
 ### WorkQueue 的 top 和数组的维护为什么要用 putOrderedObject 和 putOrderedInt
 
-putOrdered** 系列方法类似于 volatile 写。volatile 写会在写前加 StoreStore 屏障，会在写后加 StoreLoad 屏障。putOrdered 只有 StoreStore，没有 StoreLoad。带来的影响是 putOrdered 更新的变量无法立即保证可见性。但是此处为什么能容忍可见性的延迟的呢？   TODO
+putOrdered** 系列方法类似于 volatile 写。volatile 写会在写前加 StoreStore 屏障，会在写后加 StoreLoad 屏障。putOrdered 只有 StoreStore，没有 StoreLoad。带来的影响是 putOrdered 更新的变量无法立即保证可见性。但是此处为什么能容忍可见性的延迟的呢？   TODO https://www.zhihu.com/question/270824087
 
 ### SMASK 是干什么用的
 

@@ -22,3 +22,7 @@ tags: IDEA
 Run - Edit Configrations - 新增一个Maven的运行方式。
 
 ![](http://note-1255449501.file.myqcloud.com/2018-03-22-080451.png)
+
+### Maven 自动下载源码
+
+![](http://note-1255449501.file.myqcloud.com/2018-04-26-021913.png)

@@ -20,7 +20,7 @@ com.seventh7.mybatis.ref.CmProject 初始化耗了 75 秒。去把 MyBatis 插�
 
 <!-- more -->
 
-禁用以后明显解决了，这个插件记得是之前安装的破解的 MyBatis 插件。重新去 idea 插件仓库里搜，现在又了一个 Free MyBatis Plugin，不用再找破解版的了：
+禁用以后明显解决了，这个插件记得是之前安装的破解的 MyBatis 插件。重新去 idea 插件仓库里搜，现在有了一个 Free MyBatis Plugin，不用再找破解版的了：
 
 ![](http://note-1255449501.file.myqcloud.com/2018-05-06-075848.png) 
 

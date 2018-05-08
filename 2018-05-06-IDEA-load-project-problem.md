@@ -67,3 +67,6 @@ java.net.SocketException: Operation timed out (Read failed)
 	at java.lang.Thread.run(Thread.java:745)
 ```
 
+![](http://note-1255449501.file.myqcloud.com/2018-05-07-015157.png)
+
+抓包看了下，两个超时请求分别请求的是 googleapi 和 client.google.com，连接不上。

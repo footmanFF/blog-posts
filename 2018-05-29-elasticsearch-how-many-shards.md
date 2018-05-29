@@ -13,6 +13,8 @@ tags: Elasticsearch, ES
 
 ES 只新增数据，不更新数据。更新也只是把旧的数据标记删除，再新增新的数据。被删除的数据在段合并前，是会一直占用资源的。有一种思路是按时间区间将数据分成不同的索引存储，比如 2017 年一份索引、2018 年一份索引。这样索引会更小，每次进入下一个年份都有机会调整分片数量和索引结果，冷数据也可以按年进入归档状态，不会影响在热数据上的业务服务。
 
+<!-- more -->
+
 太小的分片会导致问题：
 
 > *Small shards result in small segments, which increases overhead. Aim to keep the average shard size between a few GB and a few tens of GB. For use-cases with time-based data, it is common to see shards between 20GB and 40GB in size.*

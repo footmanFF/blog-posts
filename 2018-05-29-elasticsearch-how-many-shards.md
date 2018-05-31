@@ -43,6 +43,10 @@ ES 每个分片是单线程的处理一个查询的，多个分片的结果再�
 
 可以先在单节点单分片上模拟测试真实的查询直到挂掉，这样可以评估出一台机器的能力。然后再评估自己大约要支撑最多多少数据量，然后再除以每个分片的量就能得出需要多少分片或者机器了。此处粗略描述，具体见 [Capacity Planning](https://www.elastic.co/guide/en/elasticsearch/guide/2.x/capacity-planning.html)。
 
+另外，也可以用基准测试去测量索引的性能。一款 ES 基准测试工具 [Announcing Rally: Our benchmarking tool for Elasticsearch](https://www.elastic.co/blog/announcing-rally-benchmarking-for-elasticsearch)
+
+> **\*TIP:** The best way to determine the maximum shard size from a query performance perspective is to benchmark using realistic data and queries**. Always benchmark with a query and indexing load representative of what the node would need to handle in production, as optimizing for a single query might give misleading results.*
+
 ### 资料
 
 [How many shards should I have in my Elasticsearch cluster?](https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster)

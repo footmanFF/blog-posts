@@ -26,3 +26,7 @@ Run - Edit Configrations - 新增一个Maven的运行方式。
 ### Maven 自动下载源码
 
 ![](http://note-1255449501.file.myqcloud.com/2018-04-26-021913.png)
+
+### 避免在格式化代码的时候引入 import 的通配符
+
+![2018-08-03 at 1.38 PM](http://note-1255449501.file.myqcloud.com/2018-08-03-053908.png)

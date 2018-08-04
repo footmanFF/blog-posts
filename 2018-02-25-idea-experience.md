@@ -30,3 +30,7 @@ Run - Edit Configrations - 新增一个Maven的运行方式。
 ### 避免在格式化代码的时候引入 import 的通配符
 
 ![2018-08-03 at 1.38 PM](http://note-1255449501.file.myqcloud.com/2018-08-03-053908.png)
+
+### 关闭拼写校验
+
+![2018-08-04 at 4.36 PM](http://note-1255449501.file.myqcloud.com/2018-08-04-083725.png)

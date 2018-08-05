@@ -34,3 +34,7 @@ Run - Edit Configrations - 新增一个Maven的运行方式。
 ### 关闭拼写校验
 
 ![2018-08-04 at 4.36 PM](http://note-1255449501.file.myqcloud.com/2018-08-04-083725.png)
+
+### 重新执行上一次的 debug
+
+先 Command + 5 然后按 Command + R。

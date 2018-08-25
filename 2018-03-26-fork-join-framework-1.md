@@ -357,7 +357,7 @@ private static final int  TERMINATED = 1 << 30;
 private static final int  SHUTDOWN   = 1 << 31;
 ```
 
-左侧第一位表示加锁状态，1为加锁。lockRunState 和 unlockRunState 详细的逻辑见上面的描述。lockRunState 方法利用 runState 的一个二进制位去作为加锁标识，来实现一个全局的锁。加锁失败会进行随机次数的自旋。自旋以后仍然无法获得锁时，就去在 stealCounter 上加锁并阻塞。这里的加锁失败就阻塞是为了避免很多线程尝试加锁，但是无法立刻获得锁时会导致的频繁的自旋，过多的自旋消耗了 CPU 资源。进入阻塞就释放了 CPU 时间。
+左侧第一位表示加锁状态，1 为加锁。lockRunState 和 unlockRunState 详细的逻辑见上面的描述。lockRunState 方法利用 runState 的一个二进制位去作为加锁标识，来实现一个全局的锁。加锁失败会进行随机次数的自旋。自旋以后仍然无法获得锁时，就去在 stealCounter 上加锁并阻塞。这里的加锁失败就阻塞是为了避免很多线程尝试加锁，但是无法立刻获得锁时会导致的频繁的自旋，过多的自旋消耗了 CPU 资源。进入阻塞就释放了 CPU 时间。
 
 unlockRunState 解锁的同时还能去更新 runState，ForkJoinPool 所有对 runState 的修改都是通过 unlockRunState 的。
 

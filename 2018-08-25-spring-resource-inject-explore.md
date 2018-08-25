@@ -194,7 +194,7 @@ getBeanNamesForType 方会从容器中所有注册的 BeanDefinition 中寻找�
 
 从其他能处理 @Resource 属性的项目 debug 的时候，发现这些 name 是这样的：
 
-![2018-08-25 at 4.59 PM](/var/folders/fd/ptrbg3sx0cv0k988y2qdqxnm0000gn/T/se.razola.Glui2/B8D69E1D-E11C-48E1-8FC7-27054EFD1A3D-477-00004DDB369CF63A/2018-08-25 at 4.59 PM.png)
+![](http://note-1255449501.file.myqcloud.com/2018-08-25-091831.jpg)
 
 其中的 org.springframework.context.annotation.internalCommonAnnotationProcessor 就是重点，我的 dmoe 中这个 bean name 没有返回。
 

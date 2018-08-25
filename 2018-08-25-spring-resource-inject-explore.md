@@ -20,6 +20,8 @@ public class App {
 }
 ```
 
+##### <!-- more -->
+
 ##### 类 A
 
 ```java

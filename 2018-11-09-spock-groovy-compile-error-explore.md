@@ -48,7 +48,7 @@ org/codehaus/groovy/ast/MethodCallTransformation 这个类没有，网上找了�
             </dependency>
 ```
 
-版本至少是 2.5 以上会包含 MethodCallTransformation 这个类。但是我的例子虽然引入了 spock 是 1.2-groovy-2.5 的版本，但是自动依赖拉取的 groovy 相关报的版本确实 2.4.15 的：
+版本至少是 2.5 以上会包含 MethodCallTransformation 这个类。但是我的例子虽然引入了 spock 是 1.2-groovy-2.5 的版本，但是自动依赖拉取的 groovy 相关报的版本确是 2.4.15 的：
 
 ```
 [INFO] +- org.spockframework:spock-core:jar:1.2-groovy-2.5:test
@@ -70,7 +70,7 @@ spring-boot-dependencies-1.5.13.RELEASE.pom
 
 ```xml
 <properties>
-	<groovy.version>2.4.15</groovy.version>
+    <groovy.version>2.4.15</groovy.version>
 </properties>
 
 <dependency>

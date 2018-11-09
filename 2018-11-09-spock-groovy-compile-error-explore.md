@@ -1,3 +1,10 @@
+---
+layout: post
+title: spock接入编译报错问题
+date: 2018-11-09
+tags: spock, groovy
+---
+
 最近在用 spock，但是搭环境时候碰到一个依赖问题，这里记录下解决过程：
 
 为了使用最新版的特性，引入的 spock 的核心依赖是这样的：
@@ -16,6 +23,8 @@
                 <scope>test</scope>
             </dependency>
 ```
+
+<!-- more -->
 
 使用的 Spring-boot 版本是这样的：
 

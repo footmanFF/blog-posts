@@ -68,6 +68,10 @@ states
 
 对同一个状态创建两个区域，每个区域都有相同的初始状态，那么这两个区域就成为「正交」的了。
 
+#### 分叉 fork
+
+当从一个状态跳往新的状态时候，有一种跳转类型是「分叉」
+
 #### 资料
 
 https://docs.spring.io/spring-statemachine/docs/2.0.3.RELEASE/reference/htmlsingle/

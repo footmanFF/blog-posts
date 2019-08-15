@@ -38,3 +38,20 @@ Run - Edit Configrations - 新增一个Maven的运行方式。
 ### 重新执行上一次的 debug
 
 先 Command + 5 然后按 Command + R。
+
+### 缩进
+
+```java
+step2.setCondition(CombineAndExecuteCondition.of(
+    applyAmountRefundableCondition,       // 4个缩进
+));
+
+step2.setCondition(CombineAndExecuteCondition.of(
+        applyAmountRefundableCondition,   // 8个缩进
+));
+```
+
+控制这个缩进的配置：
+
+![](http://note-1255449501.file.myqcloud.com/2019-08-15-025949.png)
+

@@ -55,3 +55,22 @@ step2.setCondition(CombineAndExecuteCondition.of(
 
 ![](http://note-1255449501.file.myqcloud.com/2019-08-15-025949.png)
 
+### 链式调用的缩进控制
+
+比如：
+
+```
+super.getFoo().foo().getBar().bar();
+```
+
+想缩进成这样：
+
+```
+super.getFoo()
+		 .foo()
+     .getBar()
+     .bar();
+```
+
+![](http://note-1255449501.file.myqcloud.com/2019-09-02-102134.png)
+

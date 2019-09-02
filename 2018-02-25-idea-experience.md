@@ -67,7 +67,7 @@ super.getFoo().foo().getBar().bar();
 
 ```
 super.getFoo()
-		 .foo()
+     .foo()
      .getBar()
      .bar();
 ```

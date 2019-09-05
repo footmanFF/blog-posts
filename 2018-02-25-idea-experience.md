@@ -74,3 +74,8 @@ super.getFoo()
 
 ![](http://note-1255449501.file.myqcloud.com/2019-09-02-102134.png)
 
+### 如何删除项目
+
+鼠标停在一个项目上，然后按键盘「DELETE」
+
+![](http://note-1255449501.file.myqcloud.com/2019-09-05-060832.png)

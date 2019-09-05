@@ -79,3 +79,8 @@ super.getFoo()
 鼠标停在一个项目上，然后按键盘「DELETE」
 
 ![](http://note-1255449501.file.myqcloud.com/2019-09-05-060832.png)
+
+### 强制刷 IDEA 本身的各种索引和缓存
+
+![](http://note-1255449501.file.myqcloud.com/2019-09-05-061634.png)
+

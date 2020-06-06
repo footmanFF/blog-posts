@@ -9,6 +9,9 @@ tags: spring
 
 2. 1. @Transactional 注解标注的申明式事务是用 AOP 实现的，那么事务逻辑是怎么织入的呢？
 2. 织入的事务逻辑，是怎么处理连接的？底层的 dao 实现也需要连接，应该是用 ThreadLocal 做的，那么具体是怎么实现的？
+
+
+
 ```java
 public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport implements ConfigurableBeanFactory {
   // ...
@@ -32,6 +35,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 ```
 <!-- more -->
 AbstractAutowireCapableBeanFactory：
+
 ```java
 public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory
 		implements AutowireCapableBeanFactory {

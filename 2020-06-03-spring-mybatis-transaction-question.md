@@ -10,12 +10,12 @@ tags: spring
 事务执行的代码：
 
 ```java
-    @Transactional
-    @Override
-    public CheckResult check(TradeCheckDO tradeCheckDO) {
-    		// 一次查询，查询库A A1表
-        // 一次查询，查询库B B1表
-    }
+  @Transactional
+  @Override
+  public CheckResult check(TradeCheckDO tradeCheckDO) {
+    // 一次查询，查询库A A1表
+    // 一次查询，查询库B B1表
+  }
 ```
 
 这里的问题第二次查询，在执行 select ... B1 时，没有在 B 库上执行，而是在 A 库上查 B1 表，就报错了。这个原因应该是数据源（DataSource）用的是动态数据源，导致没有重新获取连接。
@@ -26,7 +26,7 @@ tags: spring
 
 ```java
 public class DynamicDataSource extends AbstractRoutingDataSource {
-    private static final ThreadLocal<String> contextHolder = new ThreadLocal<>();
+  private static final ThreadLocal<String> contextHolder = new ThreadLocal<>();
     //设置数据源
     static void setDataSourceType(String dataSource) {
         contextHolder.set(dataSource);
@@ -58,7 +58,7 @@ mapper 的扫描，扫描到了以后注册到 spring 中是 MapperScannerConfig
 ```java
 private void processBeanDefinitions(Set<BeanDefinitionHolder> beanDefinitions) {
   for (BeanDefinitionHolder holder : beanDefinitions) {
-  	// ...
+    // ...
     GenericBeanDefinition definition = (GenericBeanDefinition) holder.getBeanDefinition();
     // 此处更换了BeanDefinition的beanClass，是关键
     definition.setBeanClass(this.mapperFactoryBean.getClass());
@@ -125,12 +125,12 @@ public class MapperProxyFactory<T> {
 public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-  	// .. 缓存MapperMethod的逻辑
+    // .. 缓存MapperMethod的逻辑
     
     // 简化了代码
     MapperMethodInvoker invoker = new PlainMethodInvoker(
       new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
-  	return invoker.invoke(proxy, method, args, sqlSession);
+    return invoker.invoke(proxy, method, args, sqlSession);
   }
 }
 ```
@@ -179,10 +179,10 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
 sqlSessionProxy 其实也是一个代理，代理的是 SqlSession 接口：
 
 ```java
-    this.sqlSessionProxy = (SqlSession) newProxyInstance(
-        SqlSessionFactory.class.getClassLoader(),
-        new Class[] { SqlSession.class },
-        new SqlSessionInterceptor());
+this.sqlSessionProxy = (SqlSession) newProxyInstance(
+  SqlSessionFactory.class.getClassLoader(),
+  new Class[] { SqlSession.class },
+  new SqlSessionInterceptor());
 ```
 
 SqlSessionInterceptor：
@@ -194,10 +194,10 @@ SqlSessionInterceptor：
    * It also unwraps exceptions thrown by {@code Method#invoke(Object, Object...)} to
    * pass a {@code PersistenceException} to the {@code PersistenceExceptionTranslator}.
    */
-	private class SqlSessionInterceptor implements InvocationHandler {
+  private class SqlSessionInterceptor implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    	// （1）
+      // （1）
       SqlSession sqlSession = SqlSessionUtils.getSqlSession(
           SqlSessionTemplate.this.sqlSessionFactory,
           SqlSessionTemplate.this.executorType,
@@ -232,8 +232,7 @@ SqlSessionInterceptor：
 
 ```java
   public static SqlSession getSqlSession(SqlSessionFactory sessionFactory, ExecutorType executorType, 
-    PersistenceExceptionTranslator exceptionTranslator) 
-  {
+    PersistenceExceptionTranslator exceptionTranslator) {
     //（1）
     SqlSessionHolder holder = (SqlSessionHolder) TransactionSynchronizationManager.getResource(sessionFactory);
 
@@ -262,8 +261,8 @@ TransactionSynchronizationManager 的 ThreadLocal：
 
 ```java
 public abstract class TransactionSynchronizationManager {
-	private static final ThreadLocal<Map<Object, Object>> resources =
-			new NamedThreadLocal<Map<Object, Object>>("Transactional resources");
+  private static final ThreadLocal<Map<Object, Object>> resources =
+      new NamedThreadLocal<Map<Object, Object>>("Transactional resources");
 }
 ```
 
@@ -300,9 +299,9 @@ delegate.update：
 
 ```java
 public abstract class BaseExecutor implements Executor {
-	  @Override
+  @Override
   public int update(MappedStatement ms, Object parameter) throws SQLException {
-		//..
+    //..
     return doUpdate(ms, parameter);
   }
 }
@@ -380,9 +379,9 @@ public abstract class DataSourceUtils {
   public static Connection doGetConnection(DataSource dataSource) throws SQLException {
     ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSource);
     if (conHolder != null) {
-			// ..
-			return conHolder.getConnection();
-		}
+      // ..
+      return conHolder.getConnection();
+    }
     Connection con = dataSource.getConnection();
     // ..
     return con;

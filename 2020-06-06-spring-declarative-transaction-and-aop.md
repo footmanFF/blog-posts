@@ -41,15 +41,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		implements AutowireCapableBeanFactory {
   protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final Object[] args)
     throws BeanCreationException {
-  	// ...
+    // ...
     // Initialize the bean instance.
-		Object exposedObject = bean;
-		try {
-			populateBean(beanName, mbd, instanceWrapper);
-			if (exposedObject != null) {
-				exposedObject = initializeBean(beanName, exposedObject, mbd);
-			}
-		}
+    Object exposedObject = bean;
+    try {
+      populateBean(beanName, mbd, instanceWrapper);
+		  if (exposedObject != null) {
+		  exposedObject = initializeBean(beanName, exposedObject, mbd);
+    }
     // ... 
   }
 }

@@ -58,31 +58,31 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 initializeBean：
 
 ```java
-	protected Object initializeBean(final String beanName, final Object bean, RootBeanDefinition mbd) {
+  protected Object initializeBean(final String beanName, final Object bean, RootBeanDefinition mbd) {
     // ...
     if (mbd == null || !mbd.isSynthetic()) {
-			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
-		}
-		return wrappedBean;
+      wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+    }
+    return wrappedBean;
   }
 ```
 
 applyBeanPostProcessorsAfterInitialization：
 
 ```java
-	@Override
-	public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
-			throws BeansException {
+  @Override
+  public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
+    throws BeansException {
 
-		Object result = existingBean;
-		for (BeanPostProcessor beanProcessor : getBeanPostProcessors()) {
-			result = beanProcessor.postProcessAfterInitialization(result, beanName);
-			if (result == null) {
-				return result;
-			}
-		}
-		return result;
-	}
+    Object result = existingBean;
+    for (BeanPostProcessor beanProcessor : getBeanPostProcessors()) {
+      result = beanProcessor.postProcessAfterInitialization(result, beanName);
+      if (result == null) {
+        return result;
+      }
+    }
+    return result;
+  }
 ```
 
 getBeanPostProcessors() 中的 InfrastructureAdvisorAutoProxyCreator，在经过 postProcessAfterInitialization 以后 result 变成 cglib 包装的代理类：
@@ -93,42 +93,42 @@ InfrastructureAdvisorAutoProxyCreator：
 
 ```java
 public class InfrastructureAdvisorAutoProxyCreator extends AbstractAdvisorAutoProxyCreator {
-  	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-    	//.. 
-      return wrapIfNecessary(bean, beanName, cacheKey);
-    }
+  public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+    //..
+    return wrapIfNecessary(bean, beanName, cacheKey);
+  }
 }
 ```
 
 ```java
-	protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
-		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
+  protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
+  Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
     Object proxy = createProxy(bean.getClass(), beanName, 
                                specificInterceptors, new SingletonTargetSource(bean));
     return proxy;
-	}
+  }
 ```
 
 ```java
-	// 生路部分代码
-	protected Object createProxy(
+  // 生路部分代码
+  protected Object createProxy(
 			Class<?> beanClass, String beanName, 
     Object[] specificInterceptors, TargetSource targetSource) {
   
     ProxyFactory proxyFactory = new ProxyFactory();
-		proxyFactory.copyFrom(this);
+    proxyFactory.copyFrom(this);
 
     evaluateProxyInterfaces(beanClass, proxyFactory);
-		// BeanFactoryTransactionAttributeSourceAdvisor
-		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
-		proxyFactory.addAdvisors(advisors);
-		proxyFactory.setTargetSource(targetSource);
-		customizeProxyFactory(proxyFactory);
+    // BeanFactoryTransactionAttributeSourceAdvisor
+    Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
+    proxyFactory.addAdvisors(advisors);
+    proxyFactory.setTargetSource(targetSource);
+    customizeProxyFactory(proxyFactory);
 
-		proxyFactory.setFrozen(this.freezeProxy);
-		proxyFactory.setPreFiltered(true);
+    proxyFactory.setFrozen(this.freezeProxy);
+    proxyFactory.setPreFiltered(true);
 
-		return proxyFactory.getProxy(getProxyClassLoader());
+    return proxyFactory.getProxy(getProxyClassLoader());
   }
 ```
 
@@ -137,12 +137,12 @@ ProxyFactory：
 ```java
 public class ProxyFactory extends ProxyCreatorSupport {
   public Object getProxy(ClassLoader classLoader) {
-		return createAopProxy().getProxy(classLoader);
-	}
+    return createAopProxy().getProxy(classLoader);
+  }
   protected final synchronized AopProxy createAopProxy() {
-		// ..
-		return getAopProxyFactory().createAopProxy(this);
-	}
+    // ..
+    return getAopProxyFactory().createAopProxy(this);
+  }
 }
 ```
 
@@ -151,19 +151,19 @@ DefaultAopProxyFactory：
 ```java
 public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
   @Override
-	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+  public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
     // config.isProxyTargetClass() == true
-		if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
-			Class<?> targetClass = config.getTargetClass();
-			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
-				return new JdkDynamicAopProxy(config);
-			}
-			return new ObjenesisCglibAopProxy(config);
-		}
-		else {
-			return new JdkDynamicAopProxy(config);
-		}
-	}
+    if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
+      Class<?> targetClass = config.getTargetClass();
+      if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
+        return new JdkDynamicAopProxy(config);
+      }
+      return new ObjenesisCglibAopProxy(config);
+    }
+    else {
+      return new JdkDynamicAopProxy(config);
+    }
+  }
 }
 ```
 

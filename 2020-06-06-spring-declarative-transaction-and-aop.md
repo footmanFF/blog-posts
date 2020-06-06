@@ -38,7 +38,7 @@ AbstractAutowireCapableBeanFactory：
 
 ```java
 public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory
-		implements AutowireCapableBeanFactory {
+    implements AutowireCapableBeanFactory {
   protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final Object[] args)
     throws BeanCreationException {
     // ...
@@ -112,7 +112,7 @@ public class InfrastructureAdvisorAutoProxyCreator extends AbstractAdvisorAutoPr
 ```java
   // 生路部分代码
   protected Object createProxy(
-			Class<?> beanClass, String beanName, 
+      Class<?> beanClass, String beanName, 
     Object[] specificInterceptors, TargetSource targetSource) {
   
     ProxyFactory proxyFactory = new ProxyFactory();
@@ -173,7 +173,7 @@ ObjenesisCglibAopProxy：
 class ObjenesisCglibAopProxy extends CglibAopProxy {
   // 继承自CglibAopProxy的方法
   @Override
-	public Object getProxy(ClassLoader classLoader) {
+  public Object getProxy(ClassLoader classLoader) {
     Class<?> rootClass = this.advised.getTargetClass();
     Enhancer enhancer = createEnhancer();
     // ..
@@ -183,7 +183,7 @@ class ObjenesisCglibAopProxy extends CglibAopProxy {
     enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
     enhancer.setStrategy(new ClassLoaderAwareUndeclaredThrowableStrategy(classLoader));
     
-		// [0]: CglibAopProxy$DynamicAdvisedInterceptor
+    // [0]: CglibAopProxy$DynamicAdvisedInterceptor
     Callback[] callbacks = getCallbacks(rootClass);
     Class<?>[] types = new Class<?>[callbacks.length];
     for (int x = 0; x < types.length; x++) {
@@ -201,14 +201,14 @@ class ObjenesisCglibAopProxy extends CglibAopProxy {
 ```
 
 ```java
-	@Override
-	protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
+  @Override
+  protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
     // (1)
     Class<?> proxyClass = enhancer.createClass();
     // (2)
     Object proxyInstance = objenesis.newInstance(proxyClass, enhancer.getUseCache());
     // (3)
-  	((Factory) proxyInstance).setCallbacks(callbacks);
+    ((Factory) proxyInstance).setCallbacks(callbacks);
     return proxyInstance;
   }
 ```
@@ -243,8 +243,8 @@ Object proxy = enhancer.create();
 class ObjenesisCglibAopProxy extends CglibAopProxy {
   // 继承自CglibAopProxy的方法
   @Override
-	public Object getProxy(ClassLoader classLoader) {
-		//..
+  public Object getProxy(ClassLoader classLoader) {
+    //..
     Callback[] callbacks = getCallbacks(rootClass);
     //..
   }
@@ -275,11 +275,11 @@ public interface Factory {
 class CglibAopProxy implements AopProxy, Serializable {
   private static class DynamicAdvisedInterceptor implements MethodInterceptor, Serializable {
     @Override
-		public Object intercept(Object proxy, Method method, 
+    public Object intercept(Object proxy, Method method, 
                             Object[] args, MethodProxy methodProxy) throws Throwable {
       // ..
       List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
-			Object retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
+      Object retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
       // ..
       return retVal;
     }
@@ -292,23 +292,22 @@ DynamicAdvisedInterceptor 继承自 cglib 的 callback 接口，即上述（3）
 ```java
 public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Cloneable {
   @Override
-	public Object proceed() throws Throwable {
-		//..
-		Object interceptorOrInterceptionAdvice =
-				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
-		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
-			InterceptorAndDynamicMethodMatcher dm =
-					(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
-			if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
-				// (1)
-        return dm.interceptor.invoke(this);
-			}
-			else {
-				return proceed();
-			}
-		}
+  public Object proceed() throws Throwable {
     //..
-	}
+    Object interceptorOrInterceptionAdvice =
+      this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+    if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
+      InterceptorAndDynamicMethodMatcher dm =
+        (InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
+      if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
+        // (1)
+        return dm.interceptor.invoke(this);
+      } else {
+        return proceed();
+      }
+    }
+    //..
+  }
 }
 ```
 
@@ -317,16 +316,16 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 ```java
 public class TransactionInterceptor extends TransactionAspectSupport 
   implements MethodInterceptor, Serializable {
-  	@Override
-	public Object invoke(final MethodInvocation invocation) throws Throwable {
-		Class<?> targetClass = (invocation.getThis() != null ?  : null);
-		return invokeWithinTransaction(invocation.getMethod(), targetClass, new InvocationCallback() {
-			@Override
-			public Object proceedWithInvocation() throws Throwable {
-				return invocation.proceed();
-			}
-		});
-	}
+  @Override
+  public Object invoke(final MethodInvocation invocation) throws Throwable {
+    Class<?> targetClass = (invocation.getThis() != null ?  : null);
+    return invokeWithinTransaction(invocation.getMethod(), targetClass, new InvocationCallback() {
+      @Override
+      public Object proceedWithInvocation() throws Throwable {
+        return invocation.proceed();
+      }
+    });
+  }
 }
 ```
 
@@ -363,9 +362,9 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 获取实际数据连接的地方在 （1）：
 
 ```java
-	protected TransactionInfo createTransactionIfNecessary(
-			PlatformTransactionManager tm, TransactionAttribute txAttr, final String joinpointIdentification) {
-  	//..
+  protected TransactionInfo createTransactionIfNecessary(
+      PlatformTransactionManager tm, TransactionAttribute txAttr, final String joinpointIdentification) {
+    //..
     TransactionStatus status = tm.getTransaction(txAttr);
     return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
   }
@@ -377,23 +376,22 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 public abstract class AbstractPlatformTransactionManager 
   implements PlatformTransactionManager, Serializable {
   @Override
-	public final TransactionStatus getTransaction(TransactionDefinition definition)
+  public final TransactionStatus getTransaction(TransactionDefinition definition)
     throws TransactionException {
-  	Object transaction = doGetTransaction();
+    Object transaction = doGetTransaction();
     
     if (isExistingTransaction(transaction)) {
       return xx;
     }
     
     if (definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRED ||
-				definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW ||
-				definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_NESTED){
-      
+        definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW ||
+        definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_NESTED){
+     
       boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
       DefaultTransactionStatus status = newTransactionStatus(
-						definition, transaction, true, newSynchronization, debugEnabled, suspendedResources);
+        definition, transaction, true, newSynchronization, debugEnabled, suspendedResources);
       
-      // 
       doBegin(transaction, definition);
       prepareSynchronization(status, definition);
       return status;
@@ -406,13 +404,13 @@ public abstract class AbstractPlatformTransactionManager
 doBegin 方法，省略的部分逻辑：
 
 ```java
-	@Override
-	protected void doBegin(Object transaction, TransactionDefinition definition) {
-  	DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
-		Connection con = null;
-    if (txObject.getConnectionHolder() == null ||
+  @Override
+  protected void doBegin(Object transaction, TransactionDefinition definition) {
+    DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
+    Connection con = null;
+    if (txObject.getConnectionHolder() == null || 
         txObject.getConnectionHolder().isSynchronizedWithTransaction()) {
-      // (1)
+        // (1)
       Connection newCon = this.dataSource.getConnection();
       txObject.setConnectionHolder(new ConnectionHolder(newCon), true);
     }

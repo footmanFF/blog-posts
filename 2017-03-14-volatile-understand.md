@@ -25,9 +25,9 @@ volatile的作用是让一个变量是多线程可见的，并且对他的 get �
 <!-- more -->
 
 
-那么有个问题。在上面的代码里，如果线程 A 执行 writer，线程 B 并行执行 reader，变量 flag 因为有 volatile 所以是多线程可见的，但是变量 a 是可见的吗？有没有可能，reader 方法最终 i 被设置为 0，因为没有 a 变量不是「可见的」？。
+那么有个问题。在上面的代码里，如果线程 A 「先」执行 writer，线程 B 并行「后」执行 reader，变量 flag 因为有 volatile 所以是多线程可见的，但是变量 a 是可见的吗？有没有可能，reader 方法最终 i 被设置为 0，因为没有 a 变量不是「可见的」？。
 
-这个文章有讲这个问题 <http://www.infoq.com/cn/articles/java-memory-model-4>
+这个文章有讲这个问题： <http://www.infoq.com/cn/articles/java-memory-model-4>
 
 >当写一个 volatile 变量时，JMM 会**把该线程对应的本地内存中的共享变量刷新到主内存**。
 >当读一个 volatile 变量时，JMM 会把该线程对应的本地内存置为无效。线程接下来将从主内存中读取共享变量。
@@ -114,7 +114,7 @@ Happens-Before 重点在于，只有满足了 Happens-Before，那么无论谁�
 
 《Java 并发编程实践》第 16 章 （reading），FutureTask 有一种利用了 happens-before 的并发控制方法。另外，FutureTask 类在 1.6 和 1.7+ 有了变化，前者不再依赖 AQS。如下：
 
-> 由于 Happens-Before 的排序功能很强大，因此有时候可以“借助（Piggyback）”现有同步机制的可见性属性。这需要将 Happens-Before 的程序顺序规则与其他某个顺序规则（通常是监视器锁规则或者 volatile 变量规则）结合起来，从而对某个未被锁保护的变量的访问操作进行排序。这项技术由于对语句的顺序非常敏感，因此很容易出错。它是一项高级技术，并且只有当需要最大限度地提升某些类（例如 ReentrantLock）的性能时，才应该使用这项技术。
+> 由于 Happens-Before 的排序功能很强大，因此有时候可以「借助 Piggyback」现有同步机制的可见性属性。这需要将 Happens-Before 的程序顺序规则与其他某个顺序规则（通常是监视器锁规则或者 volatile 变量规则）结合起来，从而对某个未被锁保护的变量的访问操作进行排序。这项技术由于对语句的顺序非常敏感，因此很容易出错。它是一项高级技术，并且只有当需要最大限度地提升某些类（例如 ReentrantLock）的性能时，才应该使用这项技术。
 >
 > 在 FutureTask 的保护方法 AbstractQueuedSynchronizer 中说明了如何使用这种“借助”技术。AQS 维护了一个表示同步器状态的整数，FutureTask 用这个整数来保存任务的状态：正在运行，已完成和已取消。但 FutureTask 还维护了其他一些变量，例如计算的结果。当一个线程调用 set 来保存结果并且另一个线程调用 get 来获取该结果时，这两个线程最好按照 Happens- Before 进行排序。这可以通过将执行结果的引用声明为 volatile 类型来实现，但利用现有的同步机制可以更容易地实现相同的功能。
 >

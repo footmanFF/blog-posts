@@ -47,7 +47,7 @@ protected boolean tryAcquire(int unused) {
 ```
 
 ```java
-    // 在队列中增加一个节点，即新增一个等待这个锁的线程
+  // 在队列中增加一个节点，即新增一个等待这个锁的线程
 	private Node addWaiter(Node mode) {
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
@@ -106,7 +106,7 @@ if (t == null) {
 然后看 acquireQueued 方法：
 
 ```java
-    // 对队列中的某个节点，去尝试获取这个节点的排他且不可中断的锁
+  // 对队列中的某个节点，去尝试获取这个节点的排他且不可中断的锁
 	final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
         try {

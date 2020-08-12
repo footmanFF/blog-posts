@@ -15,6 +15,8 @@ https://leetcode-cn.com/problems/ugly-number/
 
 https://leetcode-cn.com/problems/ugly-number-ii/
 
+<!-- more -->
+
 解 1，小根堆：
 
 https://gitee.com/footmanff/leetcode/blob/master/src/main/java/com/footmanff/leetcode/P264_2.java

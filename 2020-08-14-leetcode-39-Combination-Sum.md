@@ -5,9 +5,7 @@ date: 2020-08-14
 tags: leetcode
 ---
 
-问题 ：
-
-https://leetcode-cn.com/problems/combination-sum/
+问题 ：https://leetcode-cn.com/problems/combination-sum/
 
 解：https://gitee.com/footmanff/leetcode/blob/master/src/main/java/com/footmanff/leetcode/P39_1.java
 

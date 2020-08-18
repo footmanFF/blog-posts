@@ -403,6 +403,33 @@ final long sumCount() {
 
 counterCells 和 baseCount 见上面的解释。
 
+##### get
+
+```java
+public V get(Object key) {
+    Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
+    int h = spread(key.hashCode());
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (e = tabAt(tab, (n - 1) & h)) != null) {
+        if ((eh = e.hash) == h) {
+            if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                return e.val;
+        }
+        // 遍历红黑树
+        else if (eh < 0)
+            return (p = e.find(h, key)) != null ? p.val : null;
+      
+        // 遍历链表
+        while ((e = e.next) != null) {
+            if (e.hash == h &&
+                ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                return e.val;
+        }
+    }
+    return null;
+}
+```
+
 ## 资料
 
 https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentHashMap.html

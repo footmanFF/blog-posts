@@ -114,7 +114,7 @@ public void execute(Runnable command) {
     // 如果线程池处于running状态，且任务入队成功
     if (isRunning(c) && workQueue.offer(command)) {
         int recheck = ctl.get();
-        // 重新检查ctl的runState，如果次数线程池已经被关闭，就去从队列删除任务
+        // 重新检查ctl的runState，如果此时线程池已经被关闭，就去从队列删除任务
         // 此处其实没有这段代码应该也可以，加了这段可以有助于在线程池被请求关闭后
         // 可以减少一些新的任务进入队列，算是种优化，可以让线程池尽快退出，不被新的任务拖累
         if (! isRunning(recheck) && remove(command))

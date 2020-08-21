@@ -191,7 +191,7 @@ Node 的 waitStatus 的四个状态：
 
 **SIGNAL：**标记为 SIGNAL 的节点表示他后面的节点需要被从阻塞中恢复过来（unpack），相当于当前获得线程释放锁或取消锁定，在他之后加锁的线程就可以从阻塞中恢复过来，并获得锁。
 
-**CANCELLED：**节点因为超时或者线程中断而进入的取消状态，线程一点进入取消状态，就不能再从这个状态进入其他状态了。尤其有一点：线程从阻塞进入取消状态就不会再重新进入阻塞状态。
+**CANCELLED：**节点因为超时或者线程中断而进入的取消状态，线程一旦进入取消状态，就不能再从这个状态进入其他状态了。尤其有一点：线程从阻塞进入取消状态就不会再重新进入阻塞状态。
 
 **CONDITION：**TODO
 
@@ -235,7 +235,7 @@ tryRelease 以 ReentrantLock 为例：
 ```java
         protected final boolean tryRelease(int releases) {
             int c = getState() - releases;
-            // 当前线程如果和锁定的线程不是同一个线程是要抛出异常的
+            // （1）当前线程如果和锁定的线程不是同一个线程是要抛出异常的
             if (Thread.currentThread() != getExclusiveOwnerThread())
                 throw new IllegalMonitorStateException();
             boolean free = false;
@@ -247,6 +247,8 @@ tryRelease 以 ReentrantLock 为例：
             return free;
         }
 ```
+
+（1）处的判断，限制了在 exclusive 模式，不会有别的线程执行同一个对象的 tryRelease 方法。因此这里后面的逻辑可以不用做并发保证 。
 
 ```java
     private void unparkSuccessor(Node node) {

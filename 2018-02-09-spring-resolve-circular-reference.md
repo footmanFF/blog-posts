@@ -63,7 +63,7 @@ BeanCurrentlyInCreationException: Error creating bean with name 'beanHolder': Re
 
 整体的 bean 构造方式和 set 方式的差不多，只是构造器的方式在初始化 bean 的时候需要使用指定的构造器，set 的方式使用没有参数的构造器。这种情况下，B1 被构造之前必须要将 B2 构造好，不然 B1 无法实例化（区别于 set 的方式）。B2 如果又依赖 B1 的话，spring 就无法继续运行了，因为连 B1 的实例都没有。
 
-spring 是通过将当前正在初始化，但是没有初始化完全的 bean 的 name 放进一个 Set 里去，出现循环引用的时候回重复去 getBean 相同 name 的 bean，就像上面的 B1 一样。然后就无法通过下面的检查，就抛出异常了：
+spring 是通过将当前正在初始化，但是没有初始化完全的 bean 的 name 放进一个 Set 里去，出现循环引用的时候会重复去 getBean 相同 name 的 bean，就像上面的 B1 一样。然后就无法通过下面的检查，就抛出异常了：
 
 ```java
 // DefaultSingletonBeanRegistry

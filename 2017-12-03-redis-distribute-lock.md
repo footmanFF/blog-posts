@@ -49,11 +49,20 @@ redlock 解决了上面的第三个问题，具体实现思路可以看这篇文
 
 #### ZooKeeper的实现方式
 
-zookeeper 实现的思路类似，可以看这篇文章[基于Redis的分布式锁到底安全吗（下）？][lock2]，相对于 redis 有优势的一点是，他不需要设置锁的超时时间，zookeeper 有一种机制可以自动检测客户端是否存活，如果不存活就去自主释放掉锁。这能解决上面提到的 redis 基本实现中的第二个问题。单机可用性问题需要依赖 zookeeper 本身的能力，zookeeper 本身不太熟悉，先埋个坑。
+zookeeper 实现的思路类似，可以看这篇文章[基于Redis的分布式锁到底安全吗（下）？][lock2]，相对于 redis 有优势的一点是，他不需要设置锁的超时时间，zookeeper 有一种机制可以自动检测客户端是否存活，如果不存活就去自主释放掉锁。这能解决上面提到的 redis 基本实现中的第二个问题。单机可用性问题需要依赖 zookeeper 本身的能力。
 
-还有一个优势是获取锁的时候可以用上 watch 机制，当锁已经存在时加锁请求会被阻塞。具体实现依旧看[基于Redis的分布式锁到底安全吗（下）？][lock2]这篇文章。
+还有一个优势是获取锁的时候可以用上 watch 机制，当锁已经存在时加锁请求会被阻塞。具体实现依旧看 [基于Redis的分布式锁到底安全吗（下）？][lock2]  这篇文章。
 
 关于这个实现可以看这篇[sc_recipes_Locks][sc_recipes_Locks]。
+
+ZooKeeper 分布式锁的优点：
+
+> 对于 ZooKeeper 分布式锁而言:
+>
+> - ZooKeeper 天生设计定位就是分布式协调，强一致性。锁的模型健壮、简单易用、适合做分布式锁。
+> - 如果获取不到锁，只需要添加一个监听器就可以了，不用一直轮询，性能消耗较小。
+>
+> http://dockone.io/article/10456
 
 #### Chubby
 
@@ -70,6 +79,8 @@ http://www.jsondream.com/2016/12/20/lock-redis-lock.html
 https://zhuanlan.zhihu.com/p/33038831?iam=4aaee5f51c32c3ee2d20727430d50386?utm_medium=social&utm_source=wechat_session
 
 #### 一些资料
+
+《数据密集型应用系统设计》第八章，主节点与锁
 
 > https://time.geekbang.org/column/article/125983
 >
@@ -88,6 +99,8 @@ https://zhuanlan.zhihu.com/p/33038831?iam=4aaee5f51c32c3ee2d20727430d50386?utm_m
 > <http://pengshuang.space/2016/10/26/Google-Chubby-学习-基本概念>
 >
 > http://zookeeper.apache.org/doc/r3.4.9/recipes.html#sc_recipes_Locks
+>
+> http://dockone.io/article/10456
 
 [lock-java]: https://xiaozhuanlan.com/topic/4672859130
 [Lock1]: http://zhangtielei.com/posts/blog-redlock-reasoning.html

@@ -283,6 +283,81 @@ tryRelease 以 ReentrantLock 为例：
 
 如果有 N 个线程在等待锁，队列中就会有 N + 1 个节点，首个节点是当前获得了锁的线程。每个等待的节点都在 acquireQueued 方法的大循环中，被 parkAndCheckInterrupt 方法阻塞。当前获取锁的线程一旦释放锁，就会去唤醒他的下一个节点（下一个等待线程）。等待线程被唤醒以后又开始执行 acquireQueued 方法的循环，重新检查「自己前面的节点是不是首个节点，并且是不是能够获取锁」，如果通过检查就自己成为头部，并且方法返回，获得锁。
 
+### ReentrantLock 的公平锁
+
+公平锁和非公平锁，只在 tryAcquire 不一样。acquire 是 AQS 的方法。
+
+```java
+    public final void acquire(int arg) {
+        if (!tryAcquire(arg) &&
+            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            selfInterrupt();
+    }
+```
+
+公平锁：
+
+```java
+static final class FairSync extends Sync {
+    /**
+     * Fair version of tryAcquire.  Don't grant access unless
+     * recursive call or no waiters or is first.
+     */
+    protected final boolean tryAcquire(int acquires) {
+        final Thread current = Thread.currentThread();
+        int c = getState();
+        if (c == 0) {  // （1）
+            if (!hasQueuedPredecessors() &&
+                compareAndSetState(0, acquires)) {
+                setExclusiveOwnerThread(current);
+                return true;
+            }
+        }
+        else if (current == getExclusiveOwnerThread()) {
+            int nextc = c + acquires;
+            if (nextc < 0)
+                throw new Error("Maximum lock count exceeded");
+            setState(nextc);
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+非公平锁：
+
+```java
+abstract static class Sync extends AbstractQueuedSynchronizer {
+    /**
+     * Performs non-fair tryLock.  tryAcquire is implemented in
+     * subclasses, but both need nonfair try for trylock method.
+     */
+    final boolean nonfairTryAcquire(int acquires) {
+        final Thread current = Thread.currentThread();
+        int c = getState();
+        if (c == 0) {  // （1）
+            if (compareAndSetState(0, acquires)) {
+                setExclusiveOwnerThread(current);
+                return true;
+            }
+        }
+        else if (current == getExclusiveOwnerThread()) {
+            int nextc = c + acquires;
+            if (nextc < 0) // overflow
+                throw new Error("Maximum lock count exceeded");
+            setState(nextc);
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+公平锁在首次尝试进入临界区的时候，会首先去判断是否有其他线程正已经获取到锁，或者处在队列中，只有在没有的情况，才允许去设置 state，并进入临界区。相对于非公平锁，区别就在这一个点。
+
+非公平锁可能发生的一种情况是，处于队列中在等待线程，有可能因为一直有新的线程在抢占，有可能永远也无法获取锁。
+
 ### 引用
 
 [深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）](http://www.infoq.com/cn/articles/jdk1.8-abstractqueuedsynchronizer)

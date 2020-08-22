@@ -403,7 +403,7 @@ getTask：
 
 **备注：**getTask 方法中标注的 (1) 和 (2) 的 timed 变量，控制的是是否空闲线程（IDLE）会被回收，如果设置了 allowCoreThreadTimeOut 为 true，那么所有线程都可能会被回收，如果 allowCoreThreadTimeOut 为 false，那就只有核心线程以外的线程会被回收。回收还是通过 getTask 返回 null，然后由外层的循环控制工作线程的退出（回收）。
 
-如果当前池里的线程全是核心线程，且队列中的任务为空，那么 getTask 会一直空转，每次循环在 workQueue.poll 处等待 keepAliveTime 纳秒时间，等待完就继续进行下一次循环，知道任务队列（workQueue）中有新的任务进来，poll 会返回任务，整个方法会退出。
+如果当前池里的线程全是核心线程，且队列中的任务为空，那么 getTask 会一直空转，每次循环在 workQueue.poll 处等待 keepAliveTime 纳秒时间，等待完就继续进行下一次循环，直到任务队列（workQueue）中有新的任务进来，poll 会返回任务，整个方法会退出。
 
 processWorkerExit：
 

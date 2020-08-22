@@ -520,6 +520,49 @@ awaitDone 方法：
     }
 ```
 
+```java
+    /**
+     * Removes and signals all waiting threads, invokes done(), and
+     * nulls out callable.
+     */
+    private void finishCompletion() {
+        // assert state > COMPLETING;
+        for (WaitNode q; (q = waiters) != null;) {
+            if (UNSAFE.compareAndSwapObject(this, waitersOffset, q, null)) {
+                for (;;) {
+                    Thread t = q.thread;
+                    if (t != null) {
+                        q.thread = null;
+                        LockSupport.unpark(t);
+                    }
+                    WaitNode next = q.next;
+                    if (next == null)
+                        break;
+                    q.next = null; // unlink to help gc
+                    q = next;
+                }
+                break;
+            }
+        }
+
+        done();
+
+        callable = null;        // to reduce footprint
+    }
+```
+
+awaitDone 会将当前等待队列推进一个链表 WaitNode。最终会将线程进入阻塞，通过 LockSupport.park。唤醒是通过 finishCompletion 方法，任务执行完以后，无论是正常结束还是异常都会调这个方法。finishCompletion 回去唤醒这些方法。
+
+WaitNode 的结构：
+
+```java
+    static final class WaitNode {
+        volatile Thread thread;
+        volatile WaitNode next;
+        WaitNode() { thread = Thread.currentThread(); }
+    }
+```
+
 待续 … 
 
 ### 引用

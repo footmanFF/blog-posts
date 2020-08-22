@@ -5,26 +5,6 @@ date: 2018-02-26
 tags: ThreadPoolExecutor
 ---
 
-
-
-### 并发包描述
-
-> ##### java.util.concurrent
->
-> Utility classes commonly useful in concurrent programming. 
->
-> https://docs.oracle.com/javase/7/docs/api/
->
-> ##### java.util.concurrent.atomic
->
-> A small toolkit of classes that support lock-free thread-safe programming on single variables.
->
-> ##### java.util.concurrent.locks
->
-> Interfaces and classes providing a framework for locking and waiting for conditions that is distinct from built-in synchronization and monitors.
-
-<!-- more -->
-
 ### ThreadPoolExecutor 源码
 
 #### The main pool control state
@@ -138,7 +118,7 @@ workerCountOf 方法和 CAPACITY 变量：
 ```Java
 // 00011111 11111111 11111111 11111111
 private static final int CAPACITY   = (1 << COUNT_BITS) - 1;
-private static int workerCountOf(int c)  { 
+private static int workerCountOf(int c)  {
     return c & CAPACITY;
 }
 ```

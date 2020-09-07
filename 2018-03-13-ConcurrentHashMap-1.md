@@ -254,6 +254,7 @@ private final void addCount(long x, int check) {
     }
     if (check >= 0) {
         Node<K,V>[] tab, nt; int n, sc;
+        // sizeCtl为正数时表示下一次需要进入扩容的阀值
         while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                (n = tab.length) < MAXIMUM_CAPACITY) {
             int rs = resizeStamp(n);
@@ -463,8 +464,6 @@ public V get(Object key) {
 ```
 
 ##### transfer
-
-
 
 ```java
 /**

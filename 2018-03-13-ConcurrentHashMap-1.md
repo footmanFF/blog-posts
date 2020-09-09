@@ -465,6 +465,10 @@ public V get(Object key) {
 
 ##### transfer
 
+
+
+transferIndex
+
 ```java
 /**
  * Moves and/or copies the nodes in each bin to new table. See

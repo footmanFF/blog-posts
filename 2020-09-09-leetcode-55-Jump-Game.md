@@ -7,7 +7,7 @@ tags: leetcode
 
 问题 ：https://leetcode-cn.com/problems/jump-game/
 
-解：https://gitee.com/footmanff/leetcode/blob/master/src/main/java/com/footmanff/leetcode/P55.java
+解：https://gitee.com/footmanff/leetcode/blob/master/src/main/java/com/footmanff/leetcode/greedy/P55.java
 
 <!-- more -->
 

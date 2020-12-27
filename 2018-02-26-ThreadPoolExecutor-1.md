@@ -293,7 +293,9 @@ private void interruptIdleWorkers(boolean onlyOne) {
 }
 ```
 
-Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承自 [AbstractQueuedSynchronizer](https://docs.oracle.com/javase/7/docs/api/)？见 [AbstractQueuedSynchronizer排他锁分析](http://footmanff.com/2018/02/25/2018-02-25-AbstractQueuedSynchronizer-1/)
+Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承自 [AbstractQueuedSynchronizer](https://docs.oracle.com/javase/7/docs/api/)？见 [AbstractQueuedSynchronizer排他锁分析](http://footmanff.com/2018/02/25/2018-02-25-AbstractQueuedSynchronizer-1/)。见 runWorker 下面对锁的描述。
+
+**runWorker：**
 
 ```java
     final void runWorker(Worker w) {
@@ -303,6 +305,7 @@ Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承�
         w.unlock(); // allow interrupts
         boolean completedAbruptly = true;
         try {
+            // 首次启动，如果有初始执行的任务，就去执行初始任务，Worker的firstTask是初始任务
             while (task != null || (task = getTask()) != null) {
                 w.lock();
                 // If pool is stopping, ensure thread is interrupted;
@@ -321,7 +324,7 @@ Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承�
                     wt.interrupt();
                 }
                 try {
-                    beforeExecute(wt, task);
+                    beforeExecute(wt, task);   // （1）
                     Throwable thrown = null;
                     try {
                         task.run();
@@ -332,7 +335,7 @@ Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承�
                     } catch (Throwable x) {
                         thrown = x; throw new Error(x);
                     } finally {
-                        afterExecute(task, thrown);
+                        afterExecute(task, thrown);   // （2）
                     }
                 } finally {
                     task = null;
@@ -349,7 +352,26 @@ Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承�
     }
 ```
 
-getTask：
+#### 备注：
+
+[1]，[2]：ThreadPoolExecutor 定义的空方法，是 protected 的，子类可以继承重新这两个方法，来补充自定义执行前，执行后的逻辑。
+
+首次启动，如果有初始执行的任务，就去执行初始任务，Worker的firstTask是初始任务。
+
+**Worker 继承了 AbstractQueuedSynchronizer，并且在执行任务外面包了加锁逻辑，这是为什么？**
+
+注释解释了：
+
+```
+* 2. Before running any task, the lock is acquired to prevent
+* other pool interrupts while the task is executing, and then we
+* ensure that unless pool is stopping, this thread does not have
+* its interrupt set.
+```
+
+线程池内部有需要 interrupt 线程的地方，比如线程关闭，线程池回收。加锁以后，就可以控制对单个线程，线程的 interupt 相关操作是顺序执行的。注释里说，加锁是为了在线程执行业务逻辑的时候，阻止其他线程池内的 interrupts 操作中断线程。
+
+**getTask：**
 
 ```java
   // 返回Null代表工作线程需要结束掉
@@ -369,6 +391,7 @@ getTask：
             int wc = workerCountOf(c);
 
             // Are workers subject to culling?
+            // worker是否可能被淘汰？
             boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;  // (1)
 
             // 看看是不是线程已经过剩（线程数超过maximumPoolSize）了，如果是就把线程关闭掉
@@ -405,11 +428,34 @@ getTask：
 
 如果当前池里的线程全是核心线程，且队列中的任务为空，那么 getTask 会一直空转，每次循环在 workQueue.poll 处等待 keepAliveTime 纳秒时间，等待完就继续进行下一次循环，直到任务队列（workQueue）中有新的任务进来，poll 会返回任务，整个方法会退出。
 
-processWorkerExit：
+工作线程的核心和非核心（Worker）：并没有对线程的一个是否是核心线程的标记，Worker 内部类里没有相关的属性。那么一个线程在执行的时候（执行 run 方法），如果没有队列为空了，线程如何知道自己是核心线程还是非核心线程呢？如果是核心线程就不能退出，如果是非核心线程就需要退出。
+
+timed 参数用来控制是否需要回收当前线程，allowCoreThreadTimeOut 为 true 标识线程池的所有线程都是可能被回收的，当前线程数比核心线程数大表示当前有非核心线程存在。
+
+```java
+// Are workers subject to culling?
+// worker是否可能被淘汰？
+boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
+```
+
+那么其实可能存在一种情况，两个线程同时判断得到 wc > corePoolSize 为 true，有可能都让 getTask 返回 null，即两个线程都被回收了，那么这种情况可能出现吗？
+
+答案是不可能，两个线程同时返回 null 之前，都需要去尝试扣减 ctl 的 workCount，两个线程必然有一个扣减失败，然后继续执行循环，在下一次的循环中，重新判断 wc > corePoolSize，这个时候 timed 就为 false 了，线程也就不会被回收了。
+
+```java
+            if ((wc > maximumPoolSize || (timed && timedOut))
+                && (wc > 1 || workQueue.isEmpty())) {
+                if (compareAndDecrementWorkerCount(c))
+                    return null;
+                continue;
+            }
+```
+
+**processWorkerExit：**
 
 ```java
     private void processWorkerExit(Worker w, boolean completedAbruptly) {
-		// completedAbruptly为true代表意外结束，工作线程意外结束时需要取维护ctl中的workCount的值
+				// completedAbruptly为true代表意外结束，工作线程意外结束时需要取维护ctl中的workCount的值
         if (completedAbruptly) // If abrupt, then workerCount wasn't adjusted
             decrementWorkerCount();
 
@@ -443,15 +489,17 @@ processWorkerExit：
     }
 ```
 
+可以看出，如果Runnable 异常，或者没有任务时，工作线程是会退出，并从 worker 数组中删除的。随后如果线程池状态任然是执行中的，那么会根据核心线程数数量，最低限度的去创建线程。从逻辑可以看出，如果允许核心线程超时，那么最多只允许创建一个线程。如果不允许核心线程超时，最多也只允许创建 corePoolSize 数量的线程。可见，当线程正常退出的时候，ThreadPoolExecutor 决定是不是恢复关闭的线程是很吝啬的。
+
 #### 线程状态表
 
-| runState   | value            | desc                                     |
-| ---------- | ---------------- | ---------------------------------------- |
-| RUNNING    | -1 << COUNT_BITS | 接受新任务，也处理队列中的任务           |
-| SHUTDOWN   | 0 << COUNT_BITS  | 关闭，接受新任务，但是不处理队列中的任务 |
-| STOP       | 1 << COUNT_BITS  | 停止，不接受新任务，不处理队列中的任务   |
-| TIDYING    | 2 << COUNT_BITS  | 整理中，所有任务已经终止，工作线程数为0  |
-| TERMINATED | 3 << COUNT_BITS  | terminated() 被调用                      |
+| runState   | value            | desc                                       |
+| ---------- | ---------------- | ------------------------------------------ |
+| RUNNING    | -1 << COUNT_BITS | 接受新任务，也处理队列中的任务             |
+| SHUTDOWN   | 0 << COUNT_BITS  | 关闭，不再接受新任务，继续处理队列中的任务 |
+| STOP       | 1 << COUNT_BITS  | 停止，不接受新任务，不处理队列中的任务     |
+| TIDYING    | 2 << COUNT_BITS  | 整理中，所有任务已经终止，工作线程数为0    |
+| TERMINATED | 3 << COUNT_BITS  | terminated() 被调用                        |
 
 #### Future 的实现解析
 

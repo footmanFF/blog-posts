@@ -146,6 +146,8 @@ wrapIfNecessary：
 
 补充对 singletonObjects、earlySingletonObjects、singletonFactories、earlyProxyReferences 的解释。
 
+此处资料见：https://www.yuque.com/renyong-jmovm/kb/dpzl6u
+
 ### 构造器的方式
 
 会报异常：

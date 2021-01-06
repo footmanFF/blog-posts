@@ -148,6 +148,8 @@ wrapIfNecessary：
 
 此处资料见：https://www.yuque.com/renyong-jmovm/kb/dpzl6u
 
+另外，这么实现好像挺繁琐的，是不是最优的实现，有没有更好的实现思路。
+
 ### 构造器的方式
 
 会报异常：
@@ -168,3 +170,4 @@ protected void beforeSingletonCreation(String beanName) {
     }
 }
 ```
+

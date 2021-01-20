@@ -27,7 +27,7 @@ ctlof 方法是执行两个参数的或运算：
 
 ```java
 private static int ctlOf(int rs, int wc) { 
-    return rs | wc; 
+    return rs | wc;
 }
 ```
 
@@ -435,6 +435,8 @@ Worker.tryLock 这里加的是什么锁，为什么要加锁？Worker 类继承�
 
 如果当前池里的线程全是核心线程，且队列中的任务为空，那么 getTask 会一直空转，每次循环在 workQueue.poll 处等待 keepAliveTime 纳秒时间，等待完就继续进行下一次循环，直到任务队列（workQueue）中有新的任务进来，poll 会返回任务，整个方法会退出。
 
+**2020-01-14 补充：**上一段有问题，如果池里的线程全是核心线程，并且核心线程也配置为不回收，那么从队列中提取任务的方法使用的是 take，这个方法是会阻塞的，知道队列中有新的任务，而不是上一段说的空转。
+
 工作线程的核心和非核心（Worker）：并没有对线程的一个是否是核心线程的标记，Worker 内部类里没有相关的属性。那么一个线程在执行的时候（执行 run 方法），如果没有队列为空了，线程如何知道自己是核心线程还是非核心线程呢？如果是核心线程就不能退出，如果是非核心线程就需要退出。
 
 timed 参数用来控制是否需要回收当前线程，allowCoreThreadTimeOut 为 true 标识线程池的所有线程都是可能被回收的，当前线程数比核心线程数大表示当前有非核心线程存在。
@@ -457,6 +459,15 @@ boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
                 continue;
             }
 ```
+
+**总结线程何时回收**
+
+假设设置核心线程不回收
+
+1. 线程池已经 shutdown；
+2. 如果是工作线程，并且从对列获取任务超时，那么回收线程；
+
+如果设置核心线程可以回收，那么也和工作线程一样，可以回收。
 
 **processWorkerExit：**
 
@@ -618,7 +629,32 @@ WaitNode 的结构：
     }
 ```
 
-待续 … 
+#### 手动修改 corePoolSize
+
+```java
+    public void setCorePoolSize(int corePoolSize) {
+        if (corePoolSize < 0)
+            throw new IllegalArgumentException();
+        int delta = corePoolSize - this.corePoolSize;
+        this.corePoolSize = corePoolSize;
+        if (workerCountOf(ctl.get()) > corePoolSize)
+            interruptIdleWorkers();
+        else if (delta > 0) {
+            // We don't really know how many new threads are "needed".
+            // As a heuristic, prestart enough new workers (up to new
+            // core size) to handle the current number of tasks in
+            // queue, but stop if queue becomes empty while doing so.
+            int k = Math.min(delta, workQueue.size());
+            while (k-- > 0 && addWorker(null, true)) {
+                if (workQueue.isEmpty())
+                    break;
+            }
+        }
+    }
+```
+
+1. 如果 corePoolSize 改大，根据工作队列中待处理任务的数量去创建线程，同时不得超过最大线程数；
+2. 如果 corePoolSize 改小，就去中断工作线程；
 
 ### 引用
 

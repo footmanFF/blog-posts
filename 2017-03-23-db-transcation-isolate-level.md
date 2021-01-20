@@ -5,6 +5,26 @@ date: 2017-03-23
 tags: db
 ---
 
+# 2021-01-20 更新
+
+Mysql RR 级别，使用 next-key lock（record lock + gap lock）解决了当前读的幻读问题，但是还是有一些场景能重现出幻读问题，就比如：
+
+1. create table ab(a int primary key, b int);
+2. Tx1:
+    begin;
+    select * from ab; // empty set
+3. Tx2:
+    begin;
+    insert into ab values(1,1);
+    commit;
+4. Tx1:
+    select * from ab; // empty set, expected phantom read missing.
+    update ab set b = 2 where a = 1; // 1 row affected.
+    select * from ab; // 1 row. **phantom read here!!!!**
+    commit;
+
+例子来自：https://stackoverflow.com/questions/5444915/how-to-produce-phantom-reads
+
 # 2021-01-07 更新
 
 对幻读加一个总结，RR 下的幻读其实是「快照读不存在，当前读存在，而且是针对的新增数据来说」，一会儿有，一会儿没有，像幻影一样。

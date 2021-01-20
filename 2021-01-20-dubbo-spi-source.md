@@ -50,11 +50,11 @@ dubbo.consumer.filter = DubboConsumerFilter
 
 ```java
 public class ExtensionLoader<T> {
-  	// SPI接口和ExtensionLoader的缓存
-	  private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<>();
-		
-  	// 缓存所有的扩展class和实例，这里的class是具体
-  	private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<>();
+    // SPI接口和ExtensionLoader的缓存
+    private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<>();
+  
+    // 缓存所有的扩展class和实例，这里的class是具体
+    private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<>();
 }
 ```
 

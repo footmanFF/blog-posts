@@ -65,7 +65,7 @@ public class ExtensionLoader<T> {
 ```java
   public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
         // ...
-    		ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
+        ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
             EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
             loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
@@ -79,7 +79,7 @@ public class ExtensionLoader<T> {
 ```java
     public T getExtension(String name) {
         // ..
-      	final Holder<Object> holder = getOrCreateHolder(name);
+        final Holder<Object> holder = getOrCreateHolder(name);
         Object instance = holder.get();
         if (instance == null) {
             synchronized (holder) {
@@ -160,15 +160,15 @@ loadDirectory：
         Enumeration<java.net.URL> urls;
         ClassLoader classLoader = findClassLoader();
         if (classLoader != null) {
-          urls = classLoader.getResources(fileName);
+           urls = classLoader.getResources(fileName);
         } else {
-          urls = ClassLoader.getSystemResources(fileName);
+           urls = ClassLoader.getSystemResources(fileName);
         }
         if (urls != null) {
-          while (urls.hasMoreElements()) {
-            java.net.URL resourceURL = urls.nextElement();
-            loadResource(extensionClasses, classLoader, resourceURL);
-          }
+           while (urls.hasMoreElements()) {
+              java.net.URL resourceURL = urls.nextElement();
+              loadResource(extensionClasses, classLoader, resourceURL);
+           }
         }
     }
 ```
@@ -183,7 +183,7 @@ ExtensionFactory 本身也是一个 SPI 接口。
 @SPI
 public interface ExtensionFactory {
     // 通过类型，扩展名，拿一个实例
-  	<T> T getExtension(Class<T> type, String name);
+    <T> T getExtension(Class<T> type, String name);
 }
 ```
 
@@ -201,12 +201,12 @@ objectFactory 的初始化：
 
 ```java
 public class ExtensionLoader<T> {
-		private final ExtensionFactory objectFactory;
-		// 构造器内，初始化了objectFactory
+    private final ExtensionFactory objectFactory;
+    // 构造器内，初始化了objectFactory
   	private ExtensionLoader(Class<?> type) {
         this.type = type;
       	if (type == ExtensionFactory.class) {
-          	objectFactory = null;
+            objectFactory = null;
         } else {
             objectFactory = ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
         }
@@ -240,7 +240,7 @@ getAdaptiveExtension：
         // ..
         Object instance = createAdaptiveExtension();
         // ..
-      	return (T) instance;
+        return (T) instance;
     }
 ```
 
@@ -284,7 +284,7 @@ private volatile Class<?> cachedAdaptiveClass = null;
         } else if (isWrapperClass(clazz)) {
             cacheWrapperClass(clazz);
         } else {
-						// ..
+            // ..
         }
     }
 ```
@@ -294,7 +294,7 @@ private volatile Class<?> cachedAdaptiveClass = null;
         if (cachedAdaptiveClass == null) {
             cachedAdaptiveClass = clazz;
         }
-      	// ..
+        // ..
     }
 ```
 
@@ -426,7 +426,7 @@ extension.export(arg0);
         if (CollectionUtils.isNotEmpty(wrapperClasses)) {
             for (Class<?> wrapperClass : wrapperClasses) {
                 // 代理生成
-            	  instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
+                instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
             }
         }
         return instance;
@@ -445,7 +445,7 @@ cachedWrapperClasses 类是所有在扫包的时候发现的 wapper 类的 class
         } else if (isWrapperClass(clazz)) {
             cacheWrapperClass(clazz);   // 此处维护了 cachedWrapperClasses
         } else {
-						// ...
+            // ...
         }
     }
 ```

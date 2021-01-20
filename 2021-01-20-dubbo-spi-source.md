@@ -236,7 +236,7 @@ getAdaptiveExtension：
 
 ```java
     // 精简以后
-		public T getAdaptiveExtension() {
+    public T getAdaptiveExtension() {
         // ..
         Object instance = createAdaptiveExtension();
         // ..
@@ -247,9 +247,9 @@ getAdaptiveExtension：
 createAdaptiveExtension：
 
 ```java
-   	// 精简以后
-		private T createAdaptiveExtension() {
-      	return injectExtension((T) getAdaptiveExtensionClass().newInstance());
+    // 精简以后
+    private T createAdaptiveExtension() {
+        return injectExtension((T) getAdaptiveExtensionClass().newInstance());
     }
 ```
 
@@ -278,7 +278,7 @@ private volatile Class<?> cachedAdaptiveClass = null;
 ```java
     private void loadClass(Map<String, Class<?>> extensionClasses, java.net.URL resourceURL, Class<?> clazz, String name) throws NoSuchMethodException {
         // ...
-       	// 这里
+        // 这里
         if (clazz.isAnnotationPresent(Adaptive.class)) {
             cacheAdaptiveClass(clazz);
         } else if (isWrapperClass(clazz)) {

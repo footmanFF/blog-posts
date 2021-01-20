@@ -31,9 +31,9 @@ public @interface SPI {
 
 ````
 - resources
-		- META-INF
-				- dubbo
-						- org.apache.dubbo.rpc.Filter
+  - META-INF
+    - dubbo
+      - org.apache.dubbo.rpc.Filter
 ````
 
 ```

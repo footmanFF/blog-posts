@@ -20,7 +20,7 @@ class VolatileExample {
   }
 }
 ```
-volatile的作用是让一个变量是多线程可见的，并且对他的 get 和 set 是原子的。着重考虑前一点，后一点好理解。
+volatile 的作用是让一个变量是多线程可见的，并且对他的 get 和 set 是原子的。着重考虑前一点，后一点好理解。
 
 <!-- more -->
 
@@ -33,11 +33,12 @@ volatile的作用是让一个变量是多线程可见的，并且对他的 get �
 >当读一个 volatile 变量时，JMM 会把该线程对应的本地内存置为无效。线程接下来将从主内存中读取共享变量。
 
 如上说法，那么应该是线程 A 在写 flag 时，同时让当前线程调用的方法所能使用到的变量（局部变量、类变量）都刷到主内存。当 B 读 flag 时，同时让当前线程调用的方法所能使用到的变量（局部变量、类变量）在本地内存失效，重新去主内存中读取。
+
 以上就等价于让所有的变量都变成了多线程可见的，就如 volatile 是多线程可见的一样。
 
 >下面对 volatile 写和 volatile 读的内存语义做个总结：
->- 线程 A 写一个 volatile 变量，实质上是线程 A 向接下来将要读这个 volatile 变量的某个线程发出了（其对共享变量所在修改的）消息。
->- 线程 B 读一个volatile变量，实质上是线程 B 接收了之前某个线程发出的（在写这个volatile变量之前对共享变量所做修改的）消息。
+>- 线程 A 写一个 volatile 变量，实质上是线程 A 向接下来将要读这个 volatile 变量的某个线程发出了（其对共享变量存在修改的）消息。
+>- 线程 B 读一个 volatile 变量，实质上是线程 B 接收了之前某个线程发出的（在读这个 volatile 变量之前对共享变量存在修改的）消息。
 >- 线程 A 写一个 volatile 变量，随后线程 B 读这个 volatile 变量，这个过程实质上是线程 A 通过主内存向线程 B 发送消息。
 
 看起来就是那么回事，volatile 的作用的可见性更体现在：volatile 的写和读取发出了一个「通知 - 接受」机制，通知其他线程是否需要重新 reload 当前线程的本地内存。
@@ -54,9 +55,9 @@ volatile的作用是让一个变量是多线程可见的，并且对他的 get �
 
 ## JMM 的一些理解
 
-> Java 线程之间的通信由 Java 内存模型（本文简称为 JMM）控制，JMM 决定一个 线程对共享变量的写入何时对另一个线程可见。从抽象的角度来看，JMM 定义了 线程和主内存之间的抽象关系：线程之间的共享变量存储在主内存（main memory）中，每个线程都有一个私有的本地内存（local memory），本地内存中存储了该线程以读/写共享变量的副本。**本地内存是 JMM 的一个抽象概念，并不真实存在。它涵盖了缓存，写缓冲区，寄存器以及其他的硬件和编译器优化**。
+> Java 线程之间的通信由 Java 内存模型（本文简称为 JMM）控制，JMM 决定一个线程对共享变量的写入何时对另一个线程可见。从抽象的角度来看，JMM 定义了线程和主内存之间的抽象关系：线程之间的共享变量存储在主内存（main memory）中，每个线程都有一个私有的本地内存（local memory），本地内存中存储了该线程以读/写共享变量的副本。**本地内存是 JMM 的一个抽象概念，并不真实存在。它涵盖了缓存，写缓冲区，寄存器以及其他的硬件和编译器优化**。
 >
-> JMM 属于语言级的内存模型，它确保在不同的编译器和不同的处理器平台之上， 通过禁止特定类型的编译器重排序和处理器重排序，为程序员提供一致的内存可见 性保证。
+> JMM 属于语言级的内存模型，它确保在不同的编译器和不同的处理器平台之上， 通过禁止特定类型的编译器重排序和处理器重排序，为程序员提供一致的内存可见性保证。
 >
 > 引用自《Java内存模型》
 
@@ -95,6 +96,12 @@ load-load 等等这些个内存屏障的理解比较头疼，可以看看这个�
 
 Happens-Before 重点在于，只有满足了 Happens-Before，那么无论谁在前，两个线程中执行的命令无法进行重排序。当无法重排序，在后面的执行的线程都能看到前面执行线程的结果，即前面执行的线程的结果对后面执行的线程可见。
 
+
+
+> 如何理解 Happens-Before 呢？如果望文生义（很多网文也都爱按字面意思翻译成“先行发生”），那就南辕北辙了，Happens-Before 并不是说前面一个操作发生在后续操作的前面，它真正要表达的是：前面一个操作的结果对后续操作是可见的。就像有心灵感应的两个人，虽然远隔千里，一个人心之所想，另一个人都看得到。Happens-Before 规则就是要保证线程之间的这种“心灵感应”。所以比较正式的说法是：Happens-Before 约束了编译器的优化行为，虽允许编译器优化，但是要求编译器优化后一定遵守 Happens-Before 规则。
+>
+> 极客时间《Java并发编程实战》
+
 关于操作的顺序，并不是一定要求一个在前一个在后：
 
 > 注意，两个操作之间具有 happens-before 关系，并不意味着前一个操作必须要在后一个操作之前执行！happens-before 仅仅要求前一个操作（执行的结果）对后一个操作可见，且前一个操作按顺序排在第二个操作之前（the first is visible to and ordered before the second）
@@ -116,9 +123,9 @@ Happens-Before 重点在于，只有满足了 Happens-Before，那么无论谁�
 
 > 由于 Happens-Before 的排序功能很强大，因此有时候可以「借助 Piggyback」现有同步机制的可见性属性。这需要将 Happens-Before 的程序顺序规则与其他某个顺序规则（通常是监视器锁规则或者 volatile 变量规则）结合起来，从而对某个未被锁保护的变量的访问操作进行排序。这项技术由于对语句的顺序非常敏感，因此很容易出错。它是一项高级技术，并且只有当需要最大限度地提升某些类（例如 ReentrantLock）的性能时，才应该使用这项技术。
 >
-> 在 FutureTask 的保护方法 AbstractQueuedSynchronizer 中说明了如何使用这种“借助”技术。AQS 维护了一个表示同步器状态的整数，FutureTask 用这个整数来保存任务的状态：正在运行，已完成和已取消。但 FutureTask 还维护了其他一些变量，例如计算的结果。当一个线程调用 set 来保存结果并且另一个线程调用 get 来获取该结果时，这两个线程最好按照 Happens- Before 进行排序。这可以通过将执行结果的引用声明为 volatile 类型来实现，但利用现有的同步机制可以更容易地实现相同的功能。
+> 在 FutureTask 的保护方法 AbstractQueuedSynchronizer 中说明了如何使用这种「借助」技术。AQS 维护了一个表示同步器状态的整数，FutureTask 用这个整数来保存任务的状态：正在运行，已完成和已取消。但 FutureTask 还维护了其他一些变量，例如计算的结果。当一个线程调用 set 来保存结果并且另一个线程调用 get 来获取该结果时，这两个线程最好按照 Happens- Before 进行排序。这可以通过将执行结果的引用声明为 volatile 类型来实现，但利用现有的同步机制可以更容易地实现相同的功能。
 >
-> FutureTask 在设计时能够确保，在调用 tryAcquireShared 之前总能成功地调用 tryRelease- Shared。tryReleaseShared 会写人一个 volatile 类型的变量，而 tryAcquireShared 将读取这个变量。程序清单 16-2 给出了。**InnerSet 和 innerGet 等方法，在保存和获取 result 时将调用这些方法。由于 innerSet 将在调用 releaseShared（这又将调用 tryReleaseShared）之前写入 result，并且 innerGet 将在调用 acquireShared（这又将调用 tryReleaseShared）之后读取 result，因此将程序顺序规则与 volatile 变量规则结合在一起，就可以确保 innerSet 中的写人操作在 innerGet 中的读取操作之前执行。**
+> FutureTask 在设计时能够确保，在调用 tryAcquireShared 之前总能成功地调用 tryRelease-Shared。tryReleaseShared 会写人一个 volatile 类型的变量，而 tryAcquireShared 将读取这个变量。程序清单 16-2 给出了。**InnerSet 和 innerGet 等方法，在保存和获取 result 时将调用这些方法。由于 innerSet 将在调用 releaseShared（这又将调用 tryReleaseShared）之前写入 result，并且 innerGet 将在调用 acquireShared（这又将调用 tryReleaseShared）之后读取 result，因此将程序顺序规则与 volatile 变量规则结合在一起，就可以确保 innerSet 中的写人操作在 innerGet 中的读取操作之前执行。**
 >
 > 《Java 并发编程实践》第 16 章
 
@@ -181,7 +188,7 @@ V innerGet() throws InterruptedException, ExecutionException {
 
 《Java 并发编程实践》第 16.2 节，很值得读。另外，golang 是如何线程间通信的？GuardedBy 注解是个啥？
 
-#### 为啥没有volatile的双重检查单例模式是不对的
+#### 为啥没有 volatile 的双重检查单例模式是不对的
 
 ```java
 public class Singleton{
@@ -201,7 +208,7 @@ public class Singleton{
 ```
 
 - singleton= new Singleton() 不是原子的，指令重排时会导致方法返回的 Singleton 引用是未完成赋值的。详细见：[深入浅出单实例SINGLETON设计模式](https://coolshell.cn/articles/265.html)
-- 这个实现 涉及了对象的发布，在没有做同步的情况下（没有 happens - before）的情况下，发布的 Singleton 对象引用和他属性引用的对象可能没有刷新的主存，要么 singleton 为 null，要么 Singleton 对象内部的属性为 null，即发布了一个处于错误状态的 Singleton 对象。
+- 这个实现涉及了对象的发布，在没有做同步的情况下（没有 happens-before）的情况下，发布的 Singleton 对象引用和他属性引用的对象可能没有刷新的主存，要么 singleton 为 null，要么 Singleton 对象内部的属性为 null，即发布了一个处于错误状态的 Singleton 对象。
 
 解决办法当然是增加 volatile。对他的写入和读取有 happens - before 语义，能防止指令的重排序。另外他能保证多线程情况下的内存可见性。
 

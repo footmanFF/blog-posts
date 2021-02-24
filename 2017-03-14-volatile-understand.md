@@ -96,8 +96,6 @@ load-load 等等这些个内存屏障的理解比较头疼，可以看看这个�
 
 Happens-Before 重点在于，只有满足了 Happens-Before，那么无论谁在前，两个线程中执行的命令无法进行重排序。当无法重排序，在后面的执行的线程都能看到前面执行线程的结果，即前面执行的线程的结果对后面执行的线程可见。
 
-
-
 > 如何理解 Happens-Before 呢？如果望文生义（很多网文也都爱按字面意思翻译成“先行发生”），那就南辕北辙了，Happens-Before 并不是说前面一个操作发生在后续操作的前面，它真正要表达的是：前面一个操作的结果对后续操作是可见的。就像有心灵感应的两个人，虽然远隔千里，一个人心之所想，另一个人都看得到。Happens-Before 规则就是要保证线程之间的这种“心灵感应”。所以比较正式的说法是：Happens-Before 约束了编译器的优化行为，虽允许编译器优化，但是要求编译器优化后一定遵守 Happens-Before 规则。
 >
 > 极客时间《Java并发编程实战》
@@ -116,6 +114,42 @@ Happens-Before 重点在于，只有满足了 Happens-Before，那么无论谁�
 > - 传递性：如果 A happens- before B，且 B happens- before C，那么 A happens- before C。
 >
 > 《深入 Java  内存模型》 — 程晓明
+
+另外一个：
+
+> **程序顺序规则。**如果程序中操作 A 在操作 B 之前，那么在线程中 A 操作将在 B 操作之前执行。
+>
+> **监视器锁规则。**在监视器锁上的解锁操作必须在同一个监视器锁上的加锁操作之前执行。
+>
+> **volatile 变量规则。**对volatile变量的写入操作必须在对该变量的读操作之前执行。
+>
+> **线程启动规则。**在线程上对 Thread.start 的调用必须在该线程中执行任何操作之前执行。
+>
+> **线程结束规则。**线程中的任何操作都必须在其他线程检测到该线程已经结束之前执行，或者从 Thread.join 中成功返回，或者在调用 Thread.isAlive 时返回false。
+>
+> **中断规则。**当一个线程在另一个线程上调用 interrupt 时，必须在被中断线程检测到 interrupt 调用之前执行（通过抛出 InterruptedException，或者调用isInterrupted 和 Interrupted）。
+>
+> **终结器规则。**对象的构造函数必须在启动该对象的终结器之前执行完成。
+>
+> **传递性。**如果操作 A 在操作 B 之前执行，并且操作 B 在操作 C 之前执行，那么操作 A 必须在操作 C 之前执行。
+>
+> 《Java并发编程实践》
+
+英文版：
+
+> happens-before，The happens-before relation defines when data races take place.
+>
+> - An unlock on a monitor happens-before every subsequent lock on that monitor.
+>
+> - A write to a volatile field happens-before every subsequent read of that field.
+>
+> - A call to start() on a thread happens-before any actions in the started thread.
+>
+> - All actions in a thread happen-before any other thread successfully returns from a join() on that thread.
+>
+> - The default initialization of any object happens-before any other actions (other than default-writes) of a program.
+>
+> 《Java并发编程实践》
 
 以上第三条可以解释 VolatileExample 这个例子，为何只有 flag 是 volatile 的，但是变量 a 也是可见的。
 

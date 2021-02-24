@@ -90,6 +90,10 @@ http://www.jsondream.com/2016/12/20/lock-redis-lock.html
 
 https://zhuanlan.zhihu.com/p/33038831?iam=4aaee5f51c32c3ee2d20727430d50386?utm_medium=social&utm_source=wechat_session
 
+#### Redisson
+
+
+
 #### 一些资料
 
 《数据密集型应用系统设计》第八章，主节点与锁

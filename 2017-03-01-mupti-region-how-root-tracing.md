@@ -15,6 +15,10 @@ Remembered set 就是处理这个问题的。又假如有个 Region 叫 R2，上
 
 有了些引用关系能做啥呢？回到上面的例子，如果对 O1 做 Root tracing，只要把 Remembered set 里的外部引用指针全部加入到 Root 集合中，那么利用这个 Root  集合就能完成这个 Region 上所有对象的 Root tracing（可达性分析），即能判断所有对象是否是需要收集，不再去别的 Region 上遍历查看时有有对象应用这个 Regin 上的对象了。效率提升是杠杠的。
 
+### 2021-02-24 更新
+
+Remembered set 一般可以用卡表（CardTable）来实现，CardTable 是一个 bit 数组，每一位标记一个范围内存上的对象是否有针对当前 GC 区域的对应引用，如果有标记 1，如果没有标记 0。有了这个 CardTable，在 root-tracing 时，把 CardTable 标记为存在引用的内存区域的对象都加进 GC roots，就能收集到完整的 GC roots 了。
+
 ### 引用
 
 * 《深入Java虚拟机第2版》

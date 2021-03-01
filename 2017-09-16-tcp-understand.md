@@ -25,7 +25,6 @@ SYN 负责传递自己的想要传输字节流的初始序列号，ACK 负责告
 
 讲 TCP 讲得不错：
 
-http://jm.taobao.org/2017/06/08/20170608/
-
-http://jm.taobao.org/2017/05/25/525-1/
+- http://jm.taobao.org/2017/06/08/20170608/
+- http://jm.taobao.org/2017/05/25/525-1/
 

@@ -18,7 +18,7 @@ tags: spring
   }
 ```
 
-这里的问题第二次查询，在执行 select ... B1 时，没有在 B 库上执行，而是在 A 库上查 B1 表，就报错了。这个原因应该是数据源（DataSource）用的是动态数据源，导致没有重新获取连接。
+这里的问题是第二次查询，在执行 select ... B1 时，没有在 B 库上执行，而是在 A 库上查 B1 表，就报错了。这个原因应该是数据源（DataSource）用的是动态数据源，导致没有重新获取连接。
 
 <!-- more -->
 
@@ -27,15 +27,15 @@ tags: spring
 ```java
 public class DynamicDataSource extends AbstractRoutingDataSource {
   private static final ThreadLocal<String> contextHolder = new ThreadLocal<>();
-    //设置数据源
+    // 设置数据源
     static void setDataSourceType(String dataSource) {
         contextHolder.set(dataSource);
     }
-    //清除数据源
+    // 清除数据源
     static void clearDataSourceType() {
         contextHolder.remove();
     }
-    //每执行一次数据库，动态获取DataSource
+    // 每执行一次数据库，动态获取DataSource
     @Override
     protected Object determineCurrentLookupKey() {
         return contextHolder.get();

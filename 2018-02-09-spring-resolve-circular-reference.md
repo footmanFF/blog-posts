@@ -103,7 +103,7 @@ initializeBean 的逻辑可以看出，bpp 的 postProcessAfterInitialization �
 	}
 ```
 
-在 BeanPostProcessor 列表中，有一种 BeanPostProcessor 是 SmartInstantiationAwareBeanPostProcessor。如果存在就回去调用他的 getEarlyBeanReference 方法作为 bean 对象返回。
+在 BeanPostProcessor 列表中，有一种 BeanPostProcessor 是 SmartInstantiationAwareBeanPostProcessor。如果存在就会去调用他的 getEarlyBeanReference 方法作为 bean 对象返回。
 
 SmartInstantiationAwareBeanPostProcessor 的子类中有一个是 AbstractAutoProxyCreator。巧的是，AOP 的 BeanPostProcessor 都继承自这个抽象类。比如以前研究过的申明式事务的 bpp InfrastructureAdvisorAutoProxyCreator 就是继承自这个类。
 

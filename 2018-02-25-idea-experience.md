@@ -92,3 +92,8 @@ Cannot resolve symbol
 
 ![](http://note-1255449501.file.myqcloud.com/2019-09-05-061634.png)
 
+### CMD + C 复制的时候仅仅复制文本，而不带格式
+
+调整快捷键即可，带样式的复制是有专门的功能的。
+
+![2021-10-03 at 10.06 AM](http://note-1255449501.file.myqcloud.com/2021-10-03-020712.png)

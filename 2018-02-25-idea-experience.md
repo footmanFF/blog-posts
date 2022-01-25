@@ -7,6 +7,10 @@ tags: IDEA
 
 记录一些 IDEA 使用中的各种小问题
 
+### 代码格式化
+
+alt + command + L
+
 ### debug step in 失效
 
 红框内的打钩去掉就OK了，看源码的时候勾上了真是蛋疼
